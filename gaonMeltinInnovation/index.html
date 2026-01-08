@@ -15,7 +15,7 @@
             perspective: 1000px;
             overflow: hidden;
             position: relative;
-            height: calc(100vh - 90px); 
+            height: calc(100vh - 80px); /* 네비게이션 바 높이 줄임에 따른 조정 */
             max-height: 800px;
             background-color: white;
             border-radius: 1.5rem;
@@ -63,13 +63,9 @@
         .gradient-header { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; }
         
         /* 네비게이션 스타일 */
-        .nav-btn { flex: 0 0 auto; padding: 0 12px; }
+        .nav-btn { flex: 1; padding: 0 4px; } /* 균등 분할 */
         .nav-btn.active { color: #2563eb; }
         .nav-btn.active i { transform: scale(1.1); }
-        
-        /* 네비게이션 바 가로 스크롤 숨김 처리 */
-        .nav-scroll::-webkit-scrollbar { display: none; }
-        .nav-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         
         /* Q&A Accordion Animation */
         .qa-answer { transition: max-height 0.3s ease-out, opacity 0.3s ease-out; max-height: 0; opacity: 0; overflow: hidden; }
@@ -376,7 +372,7 @@
                     </div>
 
                     <div class="mt-6 bg-yellow-100 text-yellow-900 text-base p-4 rounded-xl w-full border border-yellow-200">
-                        💡 <strong>Tip:</strong> 행동 단계에서 <strong class="underline">손익계산서</strong>에 수익과 지출 금액을 미리 적어두면, 턴 종료 후 빠르고 정확하게 정산할 수 있습니다.
+                        💡 <strong>Tip:</strong> 행동 단계에서 <strong class="underline">손익계산서</strong>에 수입과 지출을 미리 적어두면, 턴 종료 후 빠르고 정확하게 정산할 수 있습니다.
                     </div>
                 </div>
             </div>
@@ -507,10 +503,10 @@
 
         </div>
 
-        <!-- Bottom Navigation Bar (Scrollable) -->
+        <!-- Bottom Navigation Bar (Simplified) -->
         <div class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 pb-safe shadow-lg z-50">
-            <div class="w-full overflow-x-auto nav-scroll">
-                <div class="flex justify-between items-center px-4 py-3 min-w-max space-x-4">
+            <div class="w-full">
+                <div class="flex justify-around items-center px-2 py-3">
                     <button onclick="goToSlide(0)" class="nav-btn active flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
                         <i class="fas fa-home text-xl mb-1"></i>
                         <span class="text-xs font-medium">홈</span>
@@ -519,21 +515,9 @@
                         <i class="fas fa-users text-xl mb-1"></i>
                         <span class="text-xs font-medium">준비</span>
                     </button>
-                    <button onclick="goToSlide(2)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-                        <i class="fas fa-calculator text-xl mb-1"></i>
-                        <span class="text-xs font-medium">세팅</span>
-                    </button>
                     <button onclick="goToSlide(3)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
                         <i class="fas fa-dice text-xl mb-1"></i>
-                        <span class="text-xs font-medium">이동</span>
-                    </button>
-                    <button onclick="goToSlide(4)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-                        <i class="fas fa-briefcase text-xl mb-1"></i>
-                        <span class="text-xs font-medium">사업</span>
-                    </button>
-                    <button onclick="goToSlide(5)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-                        <i class="fas fa-star text-xl mb-1"></i>
-                        <span class="text-xs font-medium">특수</span>
+                        <span class="text-xs font-medium">게임</span>
                     </button>
                     <button onclick="goToSlide(6)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
                         <i class="fas fa-coins text-xl mb-1"></i>
@@ -568,27 +552,20 @@
             // Update Navigation Buttons Highlight
             navBtns.forEach(btn => btn.classList.remove('active'));
             
-            // Map slides to nav buttons
-            // 0: 홈, 1: 준비, 2: 세팅, 3: 이동, 4: 사업, 5: 특수, 6: 정산, 7: Q&A
-            if (currentSlide === 0) navBtns[0].classList.add('active');
-            else if (currentSlide === 1) navBtns[1].classList.add('active');
-            else if (currentSlide === 2) navBtns[2].classList.add('active');
-            else if (currentSlide === 3) navBtns[3].classList.add('active');
-            else if (currentSlide === 4) navBtns[4].classList.add('active');
-            else if (currentSlide === 5) navBtns[5].classList.add('active');
-            else if (currentSlide === 6) navBtns[6].classList.add('active');
-            else if (currentSlide === 7) navBtns[7].classList.add('active');
-            else if (currentSlide >= 8) {
-                // 종료 화면에서는 모든 버튼 비활성화 혹은 홈 버튼만 활성화 등
-                // 여기서는 Q&A 버튼 활성 상태 유지보다는 아무것도 선택 안된 상태로 둠 (선택사항)
-                // 또는 마지막 버튼(Q&A)에 머물게 할 수도 있음.
-            }
+            // Map slides to nav buttons (Consolidated)
+            // 0: 홈
+            // 1, 2: 준비 (Role, Setting)
+            // 3, 4, 5: 게임 (Move, Biz, Special)
+            // 6: 정산
+            // 7, 8: Q&A (Q&A, End)
             
-            // Auto scroll nav bar
-            const activeBtn = document.querySelector('.nav-btn.active');
-            if(activeBtn) {
-                activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            }
+            if (currentSlide === 0) navBtns[0].classList.add('active');
+            else if (currentSlide >= 1 && currentSlide <= 2) navBtns[1].classList.add('active');
+            else if (currentSlide >= 3 && currentSlide <= 5) navBtns[2].classList.add('active');
+            else if (currentSlide === 6) navBtns[3].classList.add('active');
+            else if (currentSlide >= 7) navBtns[4].classList.add('active');
+            
+            // Auto scroll removed as items fit screen now
         }
 
         function nextSlide() {
