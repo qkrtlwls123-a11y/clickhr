@@ -10,7 +10,7 @@
     <style>
         body { font-family: 'Noto Sans KR', sans-serif; word-break: keep-all; background-color: #f3f4f6; }
         
-        /* 카드 컨테이너: 네비게이션 바 공간 확보 */
+        /* 카드 컨테이너 */
         .card-container {
             perspective: 1000px;
             overflow: hidden;
@@ -63,13 +63,19 @@
         .gradient-header { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; }
         
         /* 네비게이션 스타일 */
-        .nav-btn { flex: 0 0 auto; padding: 0 12px; } /* 가로 스크롤을 위해 flex-shrink 방지 */
+        .nav-btn { flex: 0 0 auto; padding: 0 12px; }
         .nav-btn.active { color: #2563eb; }
         .nav-btn.active i { transform: scale(1.1); }
         
         /* 네비게이션 바 가로 스크롤 숨김 처리 */
         .nav-scroll::-webkit-scrollbar { display: none; }
         .nav-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Q&A Accordion Animation */
+        .qa-answer { transition: max-height 0.3s ease-out, opacity 0.3s ease-out; max-height: 0; opacity: 0; overflow: hidden; }
+        .qa-answer.open { max-height: 500px; opacity: 1; }
+        .fa-chevron-down { transition: transform 0.3s; }
+        .rotate-180 { transform: rotate(180deg); }
     </style>
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen p-2 sm:p-4 bg-gray-100">
@@ -79,7 +85,7 @@
         <!-- Cards Area -->
         <div class="card-container" id="card-wrapper">
 
-            <!-- 1. 메인 (Intro) - Slide 0 -->
+            <!-- 0. 메인 (Intro) -->
             <div class="flashcard active">
                 <div class="card-content flex flex-col items-center justify-center p-8 text-center h-full">
                     <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-8 animate-bounce shadow-md">
@@ -102,7 +108,7 @@
                 </div>
             </div>
 
-            <!-- 2. 준비 (Role) - Slide 1 -->
+            <!-- 1. 준비 (Role) -->
             <div class="flashcard">
                 <div class="bg-gray-800 text-white p-6 pt-8">
                     <span class="bg-yellow-400 text-gray-900 text-sm font-bold px-2 py-1 rounded">준비 단계</span>
@@ -129,7 +135,7 @@
                         </ul>
                     </div>
 
-                    <!-- 3인 1팀 케이스 추가 -->
+                    <!-- 3인 1팀 케이스 -->
                     <div class="bg-gray-100 p-5 rounded-xl border border-gray-300">
                         <h3 class="font-bold text-gray-800 text-lg mb-2"><i class="fas fa-users mr-2"></i>3인 1팀인 경우?</h3>
                         <p class="text-gray-700 text-base">
@@ -141,7 +147,7 @@
                 </div>
             </div>
 
-            <!-- 3. 세팅 (Card Reader) - Slide 2 -->
+            <!-- 2. 세팅 (Card Reader) -->
             <div class="flashcard">
                 <div class="bg-gray-800 text-white p-6 pt-8">
                     <span class="bg-yellow-400 text-gray-900 text-sm font-bold px-2 py-1 rounded">필독</span>
@@ -149,7 +155,7 @@
                 </div>
                 <div class="card-content p-6">
                     
-                    <!-- 초기화 주의사항 강화 -->
+                    <!-- 초기화 주의사항 -->
                     <div class="mb-8 border-b pb-6 border-gray-200">
                         <div class="flex items-start">
                             <span class="bg-red-100 text-red-600 w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg mr-3 mt-1 shrink-0">1</span>
@@ -204,7 +210,7 @@
                 </div>
             </div>
 
-            <!-- 4. 이동 (Step 1) - Slide 3 -->
+            <!-- 3. 이동 (Step 1) -->
             <div class="flashcard">
                 <div class="gradient-header p-6 pt-8">
                     <span class="bg-white/20 text-white text-sm font-bold px-2 py-1 rounded">STEP 1</span>
@@ -230,7 +236,7 @@
                 </div>
             </div>
 
-            <!-- 5. 행동 A (Step 2 - Business) - Slide 4 -->
+            <!-- 4. 행동 A (Step 2 - Business) -->
             <div class="flashcard">
                 <div class="bg-green-600 text-white p-6 pt-8">
                     <span class="bg-white/20 text-white text-sm font-bold px-2 py-1 rounded">STEP 2-A</span>
@@ -279,7 +285,7 @@
                 </div>
             </div>
 
-            <!-- 6. 행동 B (Step 2 - Special) - Slide 5 -->
+            <!-- 5. 행동 B (Step 2 - Special) -->
             <div class="flashcard">
                 <div class="bg-green-600 text-white p-6 pt-8">
                     <span class="bg-white/20 text-white text-sm font-bold px-2 py-1 rounded">STEP 2-B</span>
@@ -293,7 +299,7 @@
                             <div class="bg-indigo-100 text-indigo-600 w-12 h-12 rounded-full flex items-center justify-center text-2xl mr-4 shrink-0 mt-1"><i class="fas fa-industry"></i></div>
                             <div>
                                 <h3 class="font-bold text-lg text-indigo-800">생산현장역량</h3>
-                                <p class="text-gray-600 text-base">카드 1장을 가져가서 내용을 큰 소리로 읽고 보관합니다.</p>
+                                <p class="text-gray-600 text-base">카드를 1장 가져가서 <strong class="text-indigo-600">내용을 큰 소리로 읽고</strong> 보관합니다.</p>
                             </div>
                         </div>
 
@@ -308,7 +314,7 @@
                         <div class="flex bg-white border border-gray-200 rounded-xl p-4 shadow-sm items-start">
                             <div class="bg-green-100 text-green-600 w-12 h-12 rounded-full flex items-center justify-center text-2xl mr-4 shrink-0 mt-1"><i class="fas fa-play"></i></div>
                             <div>
-                                <h3 class="font-bold text-lg text-green-700">출발 (Start)</h3>
+                                <h3 class="font-bold text-lg text-green-700">Go! (출발)</h3>
                                 <p class="text-gray-600 text-base">도착하거나 지나갈 때 <strong>월급 2M</strong>을 은행에서 받습니다.</p>
                             </div>
                         </div>
@@ -317,7 +323,7 @@
                             <div class="bg-red-100 text-red-600 w-12 h-12 rounded-full flex items-center justify-center text-2xl mr-4 shrink-0 mt-1"><i class="fas fa-chart-line-down"></i></div>
                             <div>
                                 <h3 class="font-bold text-lg text-red-700">투자 실패</h3>
-                                <p class="text-gray-600 text-base">칸에 적혀있는 금액만큼 <strong>벌금</strong>을 은행에 냅니다.</p>
+                                <p class="text-gray-600 text-base">칸에 적혀있는 금액만큼 <strong>손실액을 차감</strong>합니다.</p>
                             </div>
                         </div>
 
@@ -333,7 +339,7 @@
                             <div class="bg-blue-100 text-blue-500 w-12 h-12 rounded-full flex items-center justify-center text-2xl mr-4 shrink-0 mt-1"><i class="fas fa-umbrella-beach"></i></div>
                             <div>
                                 <h3 class="font-bold text-lg text-blue-600">휴가</h3>
-                                <p class="text-gray-600 text-base">아무 행동도 하지 않고 <strong>이번 턴을 쉽니다.</strong></p>
+                                <p class="text-gray-600 text-base">아무 행동도 하지 않고 <strong>다음 턴에 주사위를 굴리지 않습니다.</strong></p>
                             </div>
                         </div>
 
@@ -341,14 +347,14 @@
                             <div class="bg-purple-100 text-purple-600 w-12 h-12 rounded-full flex items-center justify-center text-2xl mr-4 shrink-0 mt-1"><i class="fas fa-plane"></i></div>
                             <div>
                                 <h3 class="font-bold text-lg text-purple-700">해외영업소</h3>
-                                <p class="text-gray-600 text-base"><strong>다음 턴에</strong> 주사위 없이 원하는 칸으로 즉시 이동합니다.</p>
+                                <p class="text-gray-600 text-base">다음 턴에 원하는 칸으로 즉시 이동합니다.<br><span class="text-sm text-green-600 font-bold">(Go!를 지나면 월급 2M 획득)</span></p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 7. 정산 (Step 3) - Slide 6 -->
+            <!-- 6. 정산 (Step 3) -->
             <div class="flashcard">
                 <div class="bg-purple-600 text-white p-6 pt-8">
                     <span class="bg-white/20 text-white text-sm font-bold px-2 py-1 rounded">STEP 3</span>
@@ -359,7 +365,7 @@
                         <span class="text-7xl">📢</span>
                     </div>
                     <h3 class="text-3xl font-black text-purple-800 mb-4">"자, 정산합시다!"</h3>
-                    <p class="text-lg text-gray-600 mb-8">모든 팀의 이동/행동이 끝나면<br>다 함께 외치고 정산을 시작합니다.</p>
+                    <p class="text-lg text-gray-600 mb-8">모든 팀의 이동/행동이 끝난 후<br>(매 턴 종료 시) 다 함께 정산합니다.</p>
 
                     <div class="w-full bg-purple-50 p-6 rounded-2xl border border-purple-200 text-left shadow-sm">
                         <p class="font-bold text-purple-900 text-xl mb-4 border-b border-purple-200 pb-2">정산 순서</p>
@@ -370,12 +376,109 @@
                     </div>
 
                     <div class="mt-6 bg-yellow-100 text-yellow-900 text-base p-4 rounded-xl w-full border border-yellow-200">
-                        💡 <strong>Tip:</strong> 행동 단계에서 <strong class="underline">손익계산서</strong>에 미리 적어두면, 정산할 때 계산기 두드릴 필요 없이 아주 빠릅니다!
+                        💡 <strong>Tip:</strong> 행동 단계에서 <strong class="underline">손익계산서</strong>에 수익과 지출 금액을 미리 적어두면, 턴 종료 후 빠르고 정확하게 정산할 수 있습니다.
                     </div>
                 </div>
             </div>
 
-             <!-- 8. 종료 (End) - Slide 7 -->
+            <!-- 7. Q&A (UPDATED) -->
+            <div class="flashcard">
+                <div class="bg-indigo-600 text-white p-6 pt-8">
+                    <span class="bg-white/20 text-white text-sm font-bold px-2 py-1 rounded">Q&A</span>
+                    <h2 class="text-3xl font-bold mt-2"><i class="fas fa-question-circle mr-3"></i>자주 묻는 질문</h2>
+                </div>
+                <div class="card-content p-6 space-y-4">
+                    
+                    <!-- Q1 -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <button onclick="toggleQa(this)" class="w-full text-left p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition">
+                            <span class="font-bold text-lg text-indigo-900"><span class="text-indigo-500 mr-2">Q.</span>더블이 두 번 연속 나왔어요!</span>
+                            <i class="fas fa-chevron-down text-indigo-400 transition-transform duration-300"></i>
+                        </button>
+                        <div class="qa-answer bg-white px-5 text-gray-700 text-lg border-t border-gray-100">
+                            <div class="py-4">
+                                <span class="font-bold text-gray-600 block mb-1">A. 아쉽지만 멈춰야 합니다.</span>
+                                더블 보너스 이동은 1턴에 <strong class="text-indigo-600">최대 1번만</strong> 가능합니다.<br>
+                                <span class="text-sm text-gray-500">(2연속 더블이어도 3번째는 못 던짐)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                     <!-- Q2 (New: 정산 시기) -->
+                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <button onclick="toggleQa(this)" class="w-full text-left p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition">
+                            <span class="font-bold text-lg text-indigo-900"><span class="text-indigo-500 mr-2">Q.</span>카드 결제는 언제 하나요?</span>
+                            <i class="fas fa-chevron-down text-indigo-400 transition-transform duration-300"></i>
+                        </button>
+                        <div class="qa-answer bg-white px-5 text-gray-700 text-lg border-t border-gray-100">
+                            <div class="py-4">
+                                <span class="font-bold text-gray-600 block mb-1">A. 턴이 끝난 후 한 번에!</span>
+                                매 행동마다 하지 않고, <strong class="text-gray-800">모든 팀의 이동이 끝난 후</strong> 손익계산서를 보고 일괄 정산합니다.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Q3 -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <button onclick="toggleQa(this)" class="w-full text-left p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition">
+                            <span class="font-bold text-lg text-indigo-900"><span class="text-indigo-500 mr-2">Q.</span>돈이 부족해 파산하면요?</span>
+                            <i class="fas fa-chevron-down text-indigo-400 transition-transform duration-300"></i>
+                        </button>
+                        <div class="qa-answer bg-white px-5 text-gray-700 text-lg border-t border-gray-100">
+                            <div class="py-4">
+                                <span class="font-bold text-gray-600 block mb-1">A. 자산을 매각하세요.</span>
+                                가지고 있는 <strong>사업 카드(땅)</strong>를 은행에 반납하고, 적혀있는 구입 비용을 돌려받아 빚을 갚습니다.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Q4 -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <button onclick="toggleQa(this)" class="w-full text-left p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition">
+                            <span class="font-bold text-lg text-indigo-900"><span class="text-indigo-500 mr-2">Q.</span>인수 제안을 거절당하면요?</span>
+                            <i class="fas fa-chevron-down text-indigo-400 transition-transform duration-300"></i>
+                        </button>
+                        <div class="qa-answer bg-white px-5 text-gray-700 text-lg border-t border-gray-100">
+                            <div class="py-4">
+                                <span class="font-bold text-gray-600 block mb-1">A. 강제로 뺏을 수 없습니다.</span>
+                                땅 주인이 "안 팔아요!" 하면 어쩔 수 없습니다. <strong class="text-blue-600">통행료만 지불</strong>하고 턴을 마칩니다.<br>
+                                <span class="text-sm text-gray-500">(말을 잘 해서 설득해보세요!)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Q5 -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <button onclick="toggleQa(this)" class="w-full text-left p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition">
+                            <span class="font-bold text-lg text-indigo-900"><span class="text-indigo-500 mr-2">Q.</span>내 땅에 또 걸리면요?</span>
+                            <i class="fas fa-chevron-down text-indigo-400 transition-transform duration-300"></i>
+                        </button>
+                        <div class="qa-answer bg-white px-5 text-gray-700 text-lg border-t border-gray-100">
+                            <div class="py-4">
+                                <span class="font-bold text-gray-600 block mb-1">A. 편안하게 쉽니다.</span>
+                                통행료도 없고, 아무 일도 일어나지 않습니다.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Q6: Start Space -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <button onclick="toggleQa(this)" class="w-full text-left p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition">
+                            <span class="font-bold text-lg text-indigo-900"><span class="text-indigo-500 mr-2">Q.</span>출발 칸을 지나가기만 해도 월급을 받나요?</span>
+                            <i class="fas fa-chevron-down text-indigo-400 transition-transform duration-300"></i>
+                        </button>
+                        <div class="qa-answer bg-white px-5 text-gray-700 text-lg border-t border-gray-100">
+                            <div class="py-4">
+                                <span class="font-bold text-gray-600 block mb-1">A. 네! 월급 받습니다.</span>
+                                출발 칸에 <strong>도착하거나 지나갈 때</strong> 모두 월급 2M을 받습니다.
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+             <!-- 8. 종료 (End) -->
              <div class="flashcard">
                 <div class="bg-gray-900 text-white p-6 flex flex-col justify-center h-full text-center">
                     <div class="mb-10">
@@ -424,7 +527,6 @@
                         <i class="fas fa-dice text-xl mb-1"></i>
                         <span class="text-xs font-medium">이동</span>
                     </button>
-                    <!-- 사업 (2-A) 버튼 추가 -->
                     <button onclick="goToSlide(4)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
                         <i class="fas fa-briefcase text-xl mb-1"></i>
                         <span class="text-xs font-medium">사업</span>
@@ -436,6 +538,10 @@
                     <button onclick="goToSlide(6)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
                         <i class="fas fa-coins text-xl mb-1"></i>
                         <span class="text-xs font-medium">정산</span>
+                    </button>
+                     <button onclick="goToSlide(7)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+                        <i class="fas fa-question-circle text-xl mb-1"></i>
+                        <span class="text-xs font-medium">Q&A</span>
                     </button>
                 </div>
             </div>
@@ -463,16 +569,22 @@
             navBtns.forEach(btn => btn.classList.remove('active'));
             
             // Map slides to nav buttons
-            // 0: 홈, 1: 준비, 2: 세팅, 3: 이동, 4: 사업, 5: 특수, 6: 정산
+            // 0: 홈, 1: 준비, 2: 세팅, 3: 이동, 4: 사업, 5: 특수, 6: 정산, 7: Q&A
             if (currentSlide === 0) navBtns[0].classList.add('active');
             else if (currentSlide === 1) navBtns[1].classList.add('active');
             else if (currentSlide === 2) navBtns[2].classList.add('active');
             else if (currentSlide === 3) navBtns[3].classList.add('active');
             else if (currentSlide === 4) navBtns[4].classList.add('active');
             else if (currentSlide === 5) navBtns[5].classList.add('active');
-            else if (currentSlide >= 6) navBtns[6].classList.add('active');
+            else if (currentSlide === 6) navBtns[6].classList.add('active');
+            else if (currentSlide === 7) navBtns[7].classList.add('active');
+            else if (currentSlide >= 8) {
+                // 종료 화면에서는 모든 버튼 비활성화 혹은 홈 버튼만 활성화 등
+                // 여기서는 Q&A 버튼 활성 상태 유지보다는 아무것도 선택 안된 상태로 둠 (선택사항)
+                // 또는 마지막 버튼(Q&A)에 머물게 할 수도 있음.
+            }
             
-            // Auto scroll nav bar to keep active button in view
+            // Auto scroll nav bar
             const activeBtn = document.querySelector('.nav-btn.active');
             if(activeBtn) {
                 activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
@@ -496,6 +608,28 @@
         function goToSlide(index) {
             currentSlide = index;
             updateSlide();
+        }
+
+        // Q&A Accordion Toggle Function
+        function toggleQa(button) {
+            const answerDiv = button.nextElementSibling;
+            const icon = button.querySelector('.fa-chevron-down');
+
+            if (answerDiv.classList.contains('open')) {
+                answerDiv.classList.remove('open');
+                icon.classList.remove('rotate-180');
+            } else {
+                // Close other open answers (Accordion behavior - optional but good for mobile)
+                document.querySelectorAll('.qa-answer.open').forEach(el => {
+                    el.classList.remove('open');
+                });
+                document.querySelectorAll('.fa-chevron-down.rotate-180').forEach(el => {
+                    el.classList.remove('rotate-180');
+                });
+
+                answerDiv.classList.add('open');
+                icon.classList.add('rotate-180');
+            }
         }
 
         // Touch Swipe Support
