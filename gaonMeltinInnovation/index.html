@@ -65,13 +65,14 @@
         .gradient-header { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; }
         
         /* 네비게이션 스타일 */
-        .nav-btn { flex: 0 0 auto; padding: 0 12px; }
-        .nav-btn.active { color: #2563eb; }
-        .nav-btn.active i { transform: scale(1.1); }
+        .nav-btn { flex: 0 0 auto; padding: 0 8px; font-size: 0.75rem; }
+        .nav-btn i { font-size: 1.25rem; margin-bottom: 2px; }
+        .nav-btn.active { color: #2563eb; font-weight: bold; }
+        .nav-btn.active i { transform: scale(1.1); color: #2563eb; }
         
-        /* 네비게이션 바 가로 스크롤 */
+        /* 네비게이션 바 가로 스크롤 (필요시) */
+        .nav-scroll { overflow-x: auto; -ms-overflow-style: none; scrollbar-width: none; white-space: nowrap; }
         .nav-scroll::-webkit-scrollbar { display: none; }
-        .nav-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         
         /* Q&A Accordion Animation */
         .qa-answer { transition: max-height 0.3s ease-out, opacity 0.3s ease-out; max-height: 0; opacity: 0; overflow: hidden; }
@@ -79,11 +80,12 @@
         .fa-chevron-down { transition: transform 0.3s; }
         .rotate-180 { transform: rotate(180deg); }
 
-        /* Board Image Styling */
+        /* Board Image Styling - 모바일 최적화 */
         .mobile-board-img {
-            width: 100%;
+            width: auto;
             height: auto;
-            max-height: 250px;
+            max-height: 180px; 
+            max-width: 100%;
             object-fit: contain;
             margin: 0 auto 1rem auto;
             border-radius: 12px;
@@ -120,17 +122,19 @@
             transform: translateY(20px);
             transition: transform 0.3s;
             position: relative;
+            text-align: center;
         }
         .modal-overlay.open .modal-content {
             transform: translateY(0);
         }
         .modal-close {
             position: absolute;
-            top: 15px;
+            top: 10px;
             right: 15px;
-            font-size: 1.5rem;
+            font-size: 2rem;
             color: #6b7280;
             cursor: pointer;
+            z-index: 60;
         }
 
         /* PC용 화살표 버튼 */
@@ -201,6 +205,7 @@
                     <h2 class="text-3xl font-bold mt-2">역할 나누기</h2>
                 </div>
                 <div class="card-content p-6 space-y-6">
+                    <!-- 전략담당자 -->
                     <div class="bg-blue-50 p-6 rounded-2xl border-l-8 border-blue-500 shadow-sm">
                         <h3 class="font-bold text-blue-900 text-2xl mb-2 flex items-center"><i class="fas fa-chess-knight mr-3"></i>전략담당자</h3>
                         <p class="text-gray-700 text-lg font-medium">"게임 운영 담당"</p>
@@ -210,6 +215,7 @@
                         </ul>
                     </div>
 
+                    <!-- 재정담당자 -->
                     <div class="bg-purple-50 p-6 rounded-2xl border-l-8 border-purple-500 shadow-sm">
                         <h3 class="font-bold text-purple-900 text-2xl mb-2 flex items-center"><i class="fas fa-file-invoice-dollar mr-3"></i>재정담당자</h3>
                         <p class="text-gray-700 text-lg font-medium">"자금 관리 담당"</p>
@@ -219,6 +225,7 @@
                         </ul>
                     </div>
 
+                    <!-- 3인 1팀 케이스 -->
                     <div class="bg-gray-100 p-5 rounded-xl border border-gray-300">
                         <h3 class="font-bold text-gray-800 text-lg mb-2"><i class="fas fa-users mr-2"></i>3인 1팀인 경우?</h3>
                         <p class="text-gray-700 text-base">
@@ -238,6 +245,7 @@
                 </div>
                 <div class="card-content p-6">
                     
+                    <!-- 초기화 주의사항 -->
                     <div class="mb-8 border-b pb-6 border-gray-200">
                         <div class="flex items-start">
                             <span class="bg-red-100 text-red-600 w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg mr-3 mt-1 shrink-0">1</span>
@@ -256,6 +264,7 @@
                         </div>
                     </div>
 
+                    <!-- 돈 넣고 빼기 -->
                     <div class="mb-8 border-b pb-6 border-gray-200">
                         <div class="flex items-start">
                             <span class="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg mr-3 mt-1 shrink-0">2</span>
@@ -270,16 +279,21 @@
                         </div>
                     </div>
 
+                    <!-- 결제 -->
                     <div class="grid grid-cols-2 gap-4">
                         <div class="bg-blue-50 p-4 rounded-xl text-center border border-blue-100">
                             <p class="text-blue-800 font-bold text-lg mb-1">돈 받을 때</p>
                             <p class="text-sm text-gray-500 mb-2">(월급, 통행료 수입)</p>
-                            <div class="bg-white py-2 px-4 rounded-lg shadow-sm text-lg font-bold">+ 버튼</div>
+                            <div class="bg-white py-2 px-4 rounded-lg shadow-sm text-lg font-bold">
+                                + 버튼
+                            </div>
                         </div>
                         <div class="bg-red-50 p-4 rounded-xl text-center border border-red-100">
                             <p class="text-red-800 font-bold text-lg mb-1">돈 낼 때</p>
                             <p class="text-sm text-gray-500 mb-2">(투자, 벌금 지출)</p>
-                            <div class="bg-white py-2 px-4 rounded-lg shadow-sm text-lg font-bold">- 버튼</div>
+                            <div class="bg-white py-2 px-4 rounded-lg shadow-sm text-lg font-bold">
+                                - 버튼
+                            </div>
                         </div>
                     </div>
 
@@ -312,54 +326,99 @@
                 </div>
             </div>
 
-            <!-- 4. 행동 (Step 2 - Board List) -->
+            <!-- 4. 행동 A (Step 2 - Business) 상세 설명 페이지 -->
             <div class="flashcard">
                 <div class="bg-green-600 text-white p-6 pt-8">
-                    <span class="bg-white/20 text-white text-sm font-bold px-2 py-1 rounded">STEP 2</span>
-                    <h2 class="text-3xl font-bold mt-2"><i class="fas fa-map-marked-alt mr-3"></i>게임판 행동 가이드</h2>
+                    <span class="bg-white/20 text-white text-sm font-bold px-2 py-1 rounded">STEP 2-A</span>
+                    <h2 class="text-3xl font-bold mt-2"><i class="fas fa-briefcase mr-3"></i>사업 칸 도착</h2>
+                </div>
+                <div class="card-content p-6 space-y-6">
+                    
+                    <!-- 빈 칸 -->
+                    <div class="border-2 border-gray-100 rounded-2xl p-5 shadow-sm bg-white">
+                        <div class="flex items-center mb-3">
+                            <span class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mr-3 text-gray-500"><i class="far fa-square text-xl"></i></span>
+                            <h3 class="font-bold text-xl text-gray-800">1. 주인이 없는 빈 칸</h3>
+                        </div>
+                        <p class="text-lg text-gray-600 pl-2 ml-10 border-l-4 border-gray-100">
+                            <span class="text-green-600 font-bold text-xl bg-green-50 px-2 rounded">구매 가능!</span><br>
+                            칸에 적힌 '투자비용'을 내고<br>사업권을 가져옵니다.
+                        </p>
+                    </div>
+
+                    <!-- 남의 땅 -->
+                    <div class="border-2 border-red-100 rounded-2xl p-5 shadow-sm bg-red-50">
+                        <div class="flex items-center mb-3">
+                            <span class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mr-3 text-red-500"><i class="fas fa-user-lock text-xl"></i></span>
+                            <h3 class="font-bold text-xl text-red-800">2. 다른 팀의 칸</h3>
+                        </div>
+                        <ol class="list-decimal pl-6 ml-10 space-y-2 text-lg text-gray-700">
+                            <li>주인에게 <strong class="text-red-600">통행료</strong> 지불 (필수)</li>
+                            <li>원한다면 <strong class="bg-yellow-200 px-1 rounded text-blue-800">인수 협상</strong> 시도<br>
+                                <span class="text-sm text-gray-500">"웃돈 줄 테니 파세요!" (주인 승락 시 가능)</span>
+                            </li>
+                        </ol>
+                    </div>
+
+                    <!-- 내 땅 -->
+                    <div class="border-2 border-blue-100 rounded-2xl p-5 shadow-sm bg-blue-50">
+                        <div class="flex items-center mb-3">
+                            <span class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3 text-blue-500"><i class="fas fa-flag text-xl"></i></span>
+                            <h3 class="font-bold text-xl text-blue-800">3. 우리 팀의 칸</h3>
+                        </div>
+                        <p class="text-lg text-gray-600 pl-2 ml-10 border-l-4 border-blue-200">
+                            통행료 없이 편안하게 쉽니다.<br>
+                            <span class="text-sm text-blue-500">("여긴 우리 구역이야!")</span>
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- 5. 행동 B (Step 2 - Other Special Spaces) -->
+            <div class="flashcard">
+                <div class="bg-green-600 text-white p-6 pt-8">
+                    <span class="bg-white/20 text-white text-sm font-bold px-2 py-1 rounded">STEP 2-B</span>
+                    <h2 class="text-3xl font-bold mt-2"><i class="fas fa-map-marked-alt mr-3"></i>특수 칸 가이드</h2>
                 </div>
                 <div class="card-content p-6">
-                    <p class="text-gray-500 mb-4 text-center">궁금한 칸을 눌러 확인하세요!</p>
+                    <p class="text-gray-500 mb-4 text-center text-sm">터치하여 상세 내용을 확인하세요!</p>
                     
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-2 gap-3">
                         <!-- Items -->
-                        <button onclick="openModal('business')" class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center hover:bg-gray-50 transition">
-                            <i class="fas fa-briefcase text-3xl text-blue-600 mb-2"></i>
-                            <span class="font-bold text-gray-700">사업 칸</span>
+                        <button onclick="openModal('production')" class="bg-white p-3 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center hover:bg-gray-50 transition">
+                            <i class="fas fa-industry text-2xl text-indigo-600 mb-1"></i>
+                            <span class="font-bold text-gray-700 text-sm">생산현장</span>
                         </button>
-                        <button onclick="openModal('production')" class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center hover:bg-gray-50 transition">
-                            <i class="fas fa-industry text-3xl text-indigo-600 mb-2"></i>
-                            <span class="font-bold text-gray-700">생산현장</span>
+                        <button onclick="openModal('chance')" class="bg-white p-3 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center hover:bg-gray-50 transition">
+                            <i class="fas fa-dice text-2xl text-yellow-500 mb-1"></i>
+                            <span class="font-bold text-gray-700 text-sm">복불복</span>
                         </button>
-                        <button onclick="openModal('chance')" class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center hover:bg-gray-50 transition">
-                            <i class="fas fa-dice text-3xl text-yellow-500 mb-2"></i>
-                            <span class="font-bold text-gray-700">복불복</span>
+                        <button onclick="openModal('failure')" class="bg-white p-3 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center hover:bg-gray-50 transition">
+                            <i class="fas fa-exclamation-triangle text-2xl text-red-500 mb-1"></i>
+                            <span class="font-bold text-gray-700 text-sm">투자 실패</span>
                         </button>
-                        <button onclick="openModal('failure')" class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center hover:bg-gray-50 transition">
-                            <i class="fas fa-chart-line-down text-3xl text-red-500 mb-2"></i>
-                            <span class="font-bold text-gray-700">투자 실패</span>
+                        <button onclick="openModal('go')" class="bg-white p-3 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center hover:bg-gray-50 transition">
+                            <i class="fas fa-play text-2xl text-green-600 mb-1"></i>
+                            <span class="font-bold text-gray-700 text-sm">Go! (출발)</span>
                         </button>
-                        <button onclick="openModal('go')" class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center hover:bg-gray-50 transition">
-                            <i class="fas fa-play text-3xl text-green-600 mb-2"></i>
-                            <span class="font-bold text-gray-700">Go! (출발)</span>
+                        <button onclick="openModal('vacation')" class="bg-white p-3 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center hover:bg-gray-50 transition">
+                            <i class="fas fa-umbrella-beach text-2xl text-blue-400 mb-1"></i>
+                            <span class="font-bold text-gray-700 text-sm">휴가</span>
                         </button>
-                        <button onclick="openModal('vacation')" class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center hover:bg-gray-50 transition">
-                            <i class="fas fa-umbrella-beach text-3xl text-blue-400 mb-2"></i>
-                            <span class="font-bold text-gray-700">휴가</span>
+                        <button onclick="openModal('overseas')" class="bg-white p-3 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center hover:bg-gray-50 transition">
+                            <i class="fas fa-plane text-2xl text-purple-600 mb-1"></i>
+                            <span class="font-bold text-gray-700 text-sm">해외영업소</span>
                         </button>
-                        <button onclick="openModal('overseas')" class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center hover:bg-gray-50 transition">
-                            <i class="fas fa-plane text-3xl text-purple-600 mb-2"></i>
-                            <span class="font-bold text-gray-700">해외영업소</span>
-                        </button>
-                        <button onclick="openModal('social')" class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center hover:bg-gray-50 transition">
-                            <i class="fas fa-hand-holding-heart text-3xl text-pink-500 mb-2"></i>
-                            <span class="font-bold text-gray-700">사회공헌</span>
+                        <button onclick="openModal('social')" class="bg-white p-3 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center hover:bg-gray-50 transition col-span-2">
+                            <i class="fas fa-hand-holding-heart text-2xl text-pink-500 mb-1"></i>
+                            <span class="font-bold text-gray-700 text-sm">사회공헌</span>
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- 5. 정산 (Step 3) -->
+            <!-- 6. 정산 (Step 3) -->
             <div class="flashcard">
                 <div class="bg-purple-600 text-white p-6 pt-8">
                     <span class="bg-white/20 text-white text-sm font-bold px-2 py-1 rounded">STEP 3</span>
@@ -386,7 +445,7 @@
                 </div>
             </div>
 
-            <!-- 6. Q&A -->
+            <!-- 7. Q&A -->
             <div class="flashcard">
                 <div class="bg-indigo-600 text-white p-6 pt-8">
                     <span class="bg-white/20 text-white text-sm font-bold px-2 py-1 rounded">Q&A</span>
@@ -394,7 +453,7 @@
                 </div>
                 <div class="card-content p-6 space-y-4">
                     
-                    <!-- Q1 -->
+                    <!-- Q: Double -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <button onclick="toggleQa(this)" class="w-full text-left p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition">
                             <span class="font-bold text-lg text-indigo-900"><span class="text-indigo-500 mr-2">Q.</span>더블이 두 번 연속 나왔어요!</span>
@@ -409,8 +468,25 @@
                         </div>
                     </div>
 
-                     <!-- Q2 -->
-                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <!-- Q: Monopoly Bonus -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <button onclick="toggleQa(this)" class="w-full text-left p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition">
+                            <span class="font-bold text-lg text-indigo-900"><span class="text-indigo-500 mr-2">Q.</span>독점 보너스도 있나요?</span>
+                            <i class="fas fa-chevron-down text-indigo-400 transition-transform duration-300"></i>
+                        </button>
+                        <div class="qa-answer bg-white px-5 text-gray-700 text-lg border-t border-gray-100">
+                            <div class="py-4">
+                                <span class="font-bold text-gray-600 block mb-1">A. 네, 색깔별 독점 보너스가 있습니다!</span>
+                                <ul class="list-disc pl-5 text-sm text-gray-600 mt-2 space-y-1">
+                                    <li><strong>같은 색 5장 수집:</strong> 보너스 없음</li>
+                                    <li><strong>색깔별로 한 장씩 수집 (총 4장):</strong> 보유 자산 금액 <strong class="text-blue-600">2배 보너스!</strong></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Q: Settlement Time -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <button onclick="toggleQa(this)" class="w-full text-left p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition">
                             <span class="font-bold text-lg text-indigo-900"><span class="text-indigo-500 mr-2">Q.</span>카드 결제는 언제 하나요?</span>
                             <i class="fas fa-chevron-down text-indigo-400 transition-transform duration-300"></i>
@@ -423,7 +499,35 @@
                         </div>
                     </div>
 
-                    <!-- Q3 -->
+                    <!-- Q: Same Space -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <button onclick="toggleQa(this)" class="w-full text-left p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition">
+                            <span class="font-bold text-lg text-indigo-900"><span class="text-indigo-500 mr-2">Q.</span>상대방하고 같은 칸에 도착하면요?</span>
+                            <i class="fas fa-chevron-down text-indigo-400 transition-transform duration-300"></i>
+                        </button>
+                        <div class="qa-answer bg-white px-5 text-gray-700 text-lg border-t border-gray-100">
+                            <div class="py-4">
+                                <span class="font-bold text-gray-600 block mb-1">A. 아무 일도 일어나지 않습니다.</span>
+                                겹쳐서 서 있어도 괜찮습니다. 칸의 주인이 있다면 통행료만 지불하면 됩니다.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Q: No Cards -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <button onclick="toggleQa(this)" class="w-full text-left p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition">
+                            <span class="font-bold text-lg text-indigo-900"><span class="text-indigo-500 mr-2">Q.</span>카드가 다 떨어졌다면요?</span>
+                            <i class="fas fa-chevron-down text-indigo-400 transition-transform duration-300"></i>
+                        </button>
+                        <div class="qa-answer bg-white px-5 text-gray-700 text-lg border-t border-gray-100">
+                            <div class="py-4">
+                                <span class="font-bold text-gray-600 block mb-1">A. 획득할 수 없습니다.</span>
+                                생산현장카드나 사회공헌카드가 동났다면, 해당 칸에 도착해도 <strong class="text-red-600">아무 일도 일어나지 않습니다.</strong> (보너스 획득 불가)
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Q: Bankruptcy -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <button onclick="toggleQa(this)" class="w-full text-left p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition">
                             <span class="font-bold text-lg text-indigo-900"><span class="text-indigo-500 mr-2">Q.</span>돈이 부족해 파산하면요?</span>
@@ -437,7 +541,7 @@
                         </div>
                     </div>
 
-                    <!-- Q4 -->
+                    <!-- Q: Negotiation Fail -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <button onclick="toggleQa(this)" class="w-full text-left p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition">
                             <span class="font-bold text-lg text-indigo-900"><span class="text-indigo-500 mr-2">Q.</span>인수 제안을 거절당하면요?</span>
@@ -446,13 +550,12 @@
                         <div class="qa-answer bg-white px-5 text-gray-700 text-lg border-t border-gray-100">
                             <div class="py-4">
                                 <span class="font-bold text-gray-600 block mb-1">A. 강제로 뺏을 수 없습니다.</span>
-                                땅 주인이 "안 팔아요!" 하면 어쩔 수 없습니다. <strong class="text-blue-600">통행료만 지불</strong>하고 턴을 마칩니다.<br>
-                                <span class="text-sm text-gray-500">(말을 잘 해서 설득해보세요!)</span>
+                                땅 주인이 "안 팔아요!" 하면 어쩔 수 없습니다. <strong class="text-blue-600">통행료만 지불</strong>하고 턴을 마칩니다.
                             </div>
                         </div>
                     </div>
 
-                    <!-- Q5 -->
+                    <!-- Q: Mine -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <button onclick="toggleQa(this)" class="w-full text-left p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition">
                             <span class="font-bold text-lg text-indigo-900"><span class="text-indigo-500 mr-2">Q.</span>내 땅에 또 걸리면요?</span>
@@ -466,7 +569,7 @@
                         </div>
                     </div>
 
-                    <!-- Q6: Start Space -->
+                    <!-- Q: Start Space -->
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <button onclick="toggleQa(this)" class="w-full text-left p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition">
                             <span class="font-bold text-lg text-indigo-900"><span class="text-indigo-500 mr-2">Q.</span>출발 칸을 지나가기만 해도 월급을 받나요?</span>
@@ -483,7 +586,7 @@
                 </div>
             </div>
 
-             <!-- 7. 종료 (End) -->
+             <!-- 8. 종료 (End) -->
              <div class="flashcard">
                 <div class="bg-gray-900 text-white p-6 flex flex-col justify-center h-full text-center">
                     <div class="mb-10">
@@ -492,19 +595,19 @@
                     <h2 class="text-4xl font-bold mb-6">게임 종료!</h2>
                     <p class="text-gray-400 text-lg mb-10">45분이 지나면 최종 자산을 확인하세요.</p>
                     
-                    <div class="bg-gray-800 rounded-2xl p-8 text-left space-y-4 shadow-2xl border border-gray-700">
-                        <h3 class="font-bold text-yellow-400 text-xl border-b border-gray-600 pb-3 mb-2">💰 최종 자산 계산법</h3>
-                        <div class="flex justify-between items-center text-lg">
+                    <div class="bg-gray-800 rounded-2xl p-6 text-left space-y-3">
+                        <h3 class="font-bold text-yellow-400 border-b border-gray-700 pb-2 mb-2">최종 자산 계산법</h3>
+                        <div class="flex justify-between">
                             <span>1. 보유 현금</span>
-                            <span class="text-gray-400 text-base">(단말기 잔액)</span>
+                            <span class="text-gray-400">(단말기 잔액)</span>
                         </div>
-                        <div class="flex justify-between items-center text-lg">
+                        <div class="flex justify-between">
                             <span>2. 사업 가치</span>
-                            <span class="text-gray-400 text-base">(투자비용 총합)</span>
+                            <span class="text-gray-400">(투자비용 총합)</span>
                         </div>
-                        <div class="flex justify-between items-center text-lg text-yellow-200 font-bold">
+                        <div class="flex justify-between text-yellow-200">
                             <span>3. 보너스 점수</span>
-                            <span class="text-base">(카드 보유분)</span>
+                            <span>(카드 점수)</span>
                         </div>
                     </div>
                     <button onclick="goToSlide(0)" class="mt-8 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-full transition shadow-lg">
@@ -536,14 +639,18 @@
                         <span class="text-xs font-medium">이동</span>
                     </button>
                     <button onclick="goToSlide(4)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-                        <i class="fas fa-map-marked-alt text-xl mb-1"></i>
-                        <span class="text-xs font-medium">게임판</span>
+                        <i class="fas fa-briefcase text-xl mb-1"></i>
+                        <span class="text-xs font-medium">사업</span>
                     </button>
                     <button onclick="goToSlide(5)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+                        <i class="fas fa-star text-xl mb-1"></i>
+                        <span class="text-xs font-medium">특수</span>
+                    </button>
+                    <button onclick="goToSlide(6)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
                         <i class="fas fa-coins text-xl mb-1"></i>
                         <span class="text-xs font-medium">정산</span>
                     </button>
-                     <button onclick="goToSlide(6)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+                     <button onclick="goToSlide(7)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
                         <i class="fas fa-question-circle text-xl mb-1"></i>
                         <span class="text-xs font-medium">Q&A</span>
                     </button>
@@ -553,7 +660,7 @@
 
     </div>
 
-    <!-- Modal Template (Hidden by default) -->
+    <!-- Modal Template -->
     <div id="modal-overlay" class="modal-overlay" onclick="closeModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
             <span class="modal-close" onclick="closeModal()">&times;</span>
@@ -583,7 +690,7 @@
             navBtns.forEach(btn => btn.classList.remove('active'));
             
             // Map slides to nav buttons (Simplified)
-            // 0: 홈, 1: 준비, 2: 세팅, 3: 이동, 4: 게임판, 5: 정산, 6: Q&A, 7: End
+            // 0: 홈, 1: 준비, 2: 세팅, 3: 이동, 4: 사업, 5: 특수, 6: 정산, 7: Q&A, 8: End
             if (currentSlide === 0) navBtns[0].classList.add('active');
             else if (currentSlide === 1) navBtns[1].classList.add('active');
             else if (currentSlide === 2) navBtns[2].classList.add('active');
@@ -591,9 +698,10 @@
             else if (currentSlide === 4) navBtns[4].classList.add('active');
             else if (currentSlide === 5) navBtns[5].classList.add('active');
             else if (currentSlide === 6) navBtns[6].classList.add('active');
-            else if (currentSlide === 7) navBtns[6].classList.add('active'); // End screen also highlights Q&A or nothing
+            else if (currentSlide === 7) navBtns[7].classList.add('active');
+            else if (currentSlide === 8) navBtns[7].classList.add('active'); 
             
-            // Auto scroll removed as requested previously
+            // Auto scroll removed
         }
 
         function nextSlide() {
@@ -638,58 +746,43 @@
 
         // Modal Logic
         const modalData = {
-            'business': `
-                <h3 class="text-2xl font-bold mb-4 flex items-center"><i class="fas fa-briefcase text-blue-600 mr-2"></i>사업 칸 (땅)</h3>
-                <img src="https://i.postimg.cc/nL089bZD/image.png" class="mobile-board-img">
-                <div class="space-y-3 text-left">
-                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                        <h4 class="font-bold text-gray-800">1. 빈 칸일 때</h4>
-                        <p class="text-gray-600 text-sm">투자비용을 내고 <span class="text-green-600 font-bold">구매 가능</span>합니다.</p>
-                    </div>
-                    <div class="bg-red-50 p-3 rounded-lg border border-red-200">
-                        <h4 class="font-bold text-red-800">2. 남의 땅일 때</h4>
-                        <p class="text-red-700 text-sm mb-1">① 주인에게 <strong>통행료</strong> 지불</p>
-                        <p class="text-red-700 text-sm">② <span class="font-bold">인수 협상</span> 시도 가능</p>
-                    </div>
-                </div>
-            `,
             'production': `
-                <h3 class="text-2xl font-bold mb-4 flex items-center"><i class="fas fa-industry text-indigo-600 mr-2"></i>생산현장역량</h3>
+                <h3 class="text-2xl font-bold mb-4 flex items-center justify-center text-indigo-800"><i class="fas fa-industry mr-2"></i>생산현장역량</h3>
                 <img src="https://i.postimg.cc/j2Wrr8pc/image.png" class="mobile-board-img">
                 <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-200 text-left">
-                    <h4 class="font-bold text-indigo-800 mb-2">행동 요령</h4>
-                    <ul class="list-disc pl-5 space-y-1 text-gray-700 text-sm">
+                    <h4 class="font-bold text-xl text-indigo-800 mb-2">행동 요령</h4>
+                    <ul class="list-disc pl-5 space-y-1 text-gray-700 text-lg">
                         <li>카드 1장을 가져갑니다. (무료)</li>
                         <li><strong class="text-indigo-600">내용을 큰 소리로 읽고</strong> 보관하세요.</li>
                     </ul>
                 </div>
             `,
             'chance': `
-                <h3 class="text-2xl font-bold mb-4 flex items-center"><i class="fas fa-dice text-yellow-500 mr-2"></i>복불복</h3>
+                <h3 class="text-2xl font-bold mb-4 flex items-center justify-center text-yellow-700"><i class="fas fa-dice mr-2"></i>복불복</h3>
                 <img src="https://i.postimg.cc/0rgh19d9/image.png" class="mobile-board-img">
                 <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200 text-left">
-                    <h4 class="font-bold text-yellow-800 mb-2">행동 요령</h4>
-                    <p class="text-gray-700 text-sm mb-2">복불복 카드 1장을 뒤집어 확인하세요.</p>
-                    <p class="font-bold text-yellow-700 text-sm"><i class="fas fa-exclamation-circle mr-1"></i>카드 지시사항 즉시 수행!</p>
+                    <h4 class="font-bold text-xl text-yellow-800 mb-2">행동 요령</h4>
+                    <p class="text-gray-700 text-lg mb-2">복불복 카드 1장을 뒤집어 확인하세요.</p>
+                    <p class="font-bold text-yellow-700 text-lg"><i class="fas fa-exclamation-circle mr-1"></i>카드 지시사항 즉시 수행!</p>
                 </div>
             `,
             'failure': `
-                <h3 class="text-2xl font-bold mb-4 flex items-center"><i class="fas fa-chart-line-down text-red-500 mr-2"></i>투자 실패</h3>
+                <h3 class="text-2xl font-bold mb-4 flex items-center justify-center text-red-700"><i class="fas fa-exclamation-triangle mr-2"></i>투자 실패</h3>
                 <img src="https://i.postimg.cc/BZdvnDmW/image.png" class="mobile-board-img">
                 <div class="bg-red-50 p-4 rounded-lg border border-red-200 text-left">
-                    <h4 class="font-bold text-red-800 mb-2">위기 발생!</h4>
-                    <p class="text-gray-700 text-sm mb-2">경영상 위기로 손실이 발생했습니다.</p>
-                    <p class="text-base font-bold text-red-600 border-t border-red-200 pt-2">
+                    <h4 class="font-bold text-xl text-red-800 mb-2">위기 발생!</h4>
+                    <p class="text-gray-700 text-lg mb-2">기술 투자 실패로 손실이 발생했습니다.</p>
+                    <p class="text-xl font-bold text-red-600 border-t border-red-200 pt-2">
                         💸 적혀있는 금액만큼 차감(지출)
                     </p>
                 </div>
             `,
             'go': `
-                <h3 class="text-2xl font-bold mb-4 flex items-center"><i class="fas fa-play text-green-600 mr-2"></i>Go! (출발)</h3>
+                <h3 class="text-2xl font-bold mb-4 flex items-center justify-center text-green-700"><i class="fas fa-play mr-2"></i>Go! (출발)</h3>
                 <img src="https://i.postimg.cc/d0msWxFD/image.png" class="mobile-board-img">
                 <div class="bg-green-50 p-4 rounded-lg border border-green-200 text-left">
-                    <h4 class="font-bold text-green-800 mb-2">월급 받는 곳</h4>
-                    <ul class="list-disc pl-5 space-y-1 text-gray-700 text-sm">
+                    <h4 class="font-bold text-xl text-green-800 mb-2">월급 받는 곳</h4>
+                    <ul class="list-disc pl-5 space-y-1 text-gray-700 text-lg">
                         <li>이곳에 <strong>도착</strong>하거나</li>
                         <li>이곳을 <strong>지나가면</strong></li>
                         <li class="font-bold text-blue-600 list-none mt-2">👉 월급 2M 획득!</li>
@@ -697,34 +790,34 @@
                 </div>
             `,
             'vacation': `
-                <h3 class="text-2xl font-bold mb-4 flex items-center"><i class="fas fa-umbrella-beach text-blue-400 mr-2"></i>휴가</h3>
+                <h3 class="text-2xl font-bold mb-4 flex items-center justify-center text-blue-700"><i class="fas fa-umbrella-beach mr-2"></i>휴가</h3>
                 <img src="https://i.postimg.cc/qqgpvB3n/image.png" class="mobile-board-img">
                 <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 text-left">
-                    <h4 class="font-bold text-blue-800 mb-2">잠시 쉬어가세요</h4>
-                    <p class="text-gray-700 text-sm mb-3">이번 턴은 아무것도 하지 않습니다.</p>
-                    <p class="font-bold text-blue-600 border-t border-blue-200 pt-2 text-sm">
+                    <h4 class="font-bold text-xl text-blue-800 mb-2">잠시 쉬어가세요</h4>
+                    <p class="text-gray-700 text-lg mb-3">이번 턴은 아무것도 하지 않습니다.</p>
+                    <p class="font-bold text-blue-600 border-t border-blue-200 pt-2 text-lg">
                         💤 다음 턴 주사위 굴리기 생략 (1회 휴식)
                     </p>
                 </div>
             `,
             'overseas': `
-                <h3 class="text-2xl font-bold mb-4 flex items-center"><i class="fas fa-plane text-purple-600 mr-2"></i>해외영업소</h3>
+                <h3 class="text-2xl font-bold mb-4 flex items-center justify-center text-purple-700"><i class="fas fa-plane mr-2"></i>해외영업소</h3>
                 <img src="https://i.postimg.cc/5NhffVN2/image.png" class="mobile-board-img">
                 <div class="bg-purple-50 p-4 rounded-lg border border-purple-200 text-left">
-                    <h4 class="font-bold text-purple-800 mb-2">글로벌 비즈니스 찬스!</h4>
-                    <p class="text-gray-700 text-sm mb-3">도착 시엔 쉽니다. 하지만...</p>
-                    <p class="font-bold text-purple-700 border-t border-purple-200 pt-2 text-sm">
+                    <h4 class="font-bold text-xl text-purple-800 mb-2">글로벌 비즈니스 찬스!</h4>
+                    <p class="text-gray-700 text-lg mb-3">도착 시엔 쉽니다. 하지만...</p>
+                    <p class="font-bold text-purple-700 border-t border-purple-200 pt-2 text-lg">
                         ✈️ <strong>다음 턴에</strong> 원하는 칸으로 즉시 이동!
                     </p>
-                    <p class="text-xs text-green-600 mt-1 font-bold">(Go!를 지나면 월급도 받음)</p>
+                    <p class="text-sm text-green-600 mt-1 font-bold">(Go!를 지나면 월급도 받음)</p>
                 </div>
             `,
             'social': `
-                <h3 class="text-2xl font-bold mb-4 flex items-center"><i class="fas fa-hand-holding-heart text-pink-500 mr-2"></i>사회공헌</h3>
+                <h3 class="text-2xl font-bold mb-4 flex items-center justify-center text-pink-700"><i class="fas fa-hand-holding-heart mr-2"></i>사회공헌</h3>
                 <img src="https://i.postimg.cc/tg5bdnd1/image.png" class="mobile-board-img">
                 <div class="bg-pink-50 p-4 rounded-lg border border-pink-200 text-left">
-                    <h4 class="font-bold text-pink-800 mb-2">아름다운 나눔</h4>
-                    <ul class="list-disc pl-5 space-y-1 text-gray-700 text-sm">
+                    <h4 class="font-bold text-xl text-pink-800 mb-2">아름다운 나눔</h4>
+                    <ul class="list-disc pl-5 space-y-1 text-gray-700 text-lg">
                         <li><strong class="text-red-500">1M을 기부(지불)</strong>합니다.</li>
                         <li>사회공헌 카드 1장을 획득합니다.</li>
                     </ul>
