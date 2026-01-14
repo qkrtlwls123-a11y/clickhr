@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import time
-import random
 from datetime import datetime
 
 # --- 1. 페이지 및 스타일 설정 ---
@@ -12,34 +11,51 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 기존 CSS 부분을 이걸로 교체하세요
+# 사용자 요청 CSS 적용 (사이드바 가독성 해결 + 모달/카드 스타일 추가)
 st.markdown("""
     <style>
-    /* 전체 배경 */
+    /* 메인 배경 */
     .main {background-color: #f8f9fa;}
     
-    /* 사이드바 배경 및 폰트 색상 강제 지정 */
+    /* 사이드바 스타일 강제 적용 */
     section[data-testid="stSidebar"] {
         background-color: #2c3e50;
     }
     section[data-testid="stSidebar"] * {
-        color: white !important; /* 모든 하위 요소 글자색 흰색 고정 */
+        color: white !important;
     }
-    
+    section[data-testid="stSidebar"] .stRadio > div[role="radiogroup"] > label {
+        background-color: transparent !important;
+    }
+
     /* 버튼 스타일 */
     .stButton>button {
         border-radius: 8px;
         font-weight: 600;
         height: 3em;
+        width: 100%;
     }
+    
+    /* 카드 스타일 (React UI 느낌) */
+    .custom-card {
+        background-color: white;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    
+    /* 상태 뱃지 스타일 */
+    .badge-new { background-color: #fff7ed; color: #c2410c; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; border: 1px solid #ffedd5; }
+    .badge-exist { background-color: #f1f5f9; color: #475569; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; border: 1px solid #e2e8f0; }
+    .badge-sim { background-color: #fef9c3; color: #854d0e; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; border: 1px solid #fef08a; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. 세션 스테이트 초기화 (인터랙션용) ---
-if 'cart' not in st.session_state:
-    st.session_state.cart = []
-if 'db_data' not in st.session_state:
-    st.session_state.db_data = []
+# --- 2. 세션 스테이트 초기화 ---
+if 'analysis_result' not in st.session_state:
+    st.session_state.analysis_result = None
 
 # --- 3. 사이드바 메뉴 ---
 with st.sidebar:
@@ -55,48 +71,46 @@ with st.sidebar:
     ])
     
     st.markdown("---")
-    # 로그인 정보 시뮬레이션
     with st.container():
-        st.write("👤 **Administrator**")
+        st.write("👤 Administrator")
         st.caption("Access Level: Lv.1 (Master)")
         st.caption(f"Last Login: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
-# --- 메인 헤더 영역 ---
+# --- 메인 헤더 ---
 col_h1, col_h2 = st.columns([3, 1])
 with col_h1:
     st.title(menu.split("(")[0])
-    st.markdown(f"**현재 모듈:** {menu}")
+    st.caption(f"Current Module: {menu}")
 with col_h2:
-    # 시스템 상태 표시
     st.success("🟢 System Online")
-
-st.markdown("---")
+st.divider()
 
 # ==============================================================================
-# [MODULE 1] 질문은행 (쇼핑하듯 담기 기능 구현)
+# [MODULE 1] 질문은행 (React의 장바구니 기능 반영)
 # ==============================================================================
 if "1." in menu:
     col1, col2 = st.columns([2, 1])
     
     with col1:
         st.subheader("📚 표준 문항 라이브러리")
-        st.info("검증된 표준 문항을 선택하여 설문지를 구성하세요. (AI 중복 검사 완료됨)")
+        st.info("검증된 표준 문항을 선택하여 설문지를 구성하세요.")
         
-        # 탭으로 카테고리 분류
         tab1, tab2 = st.tabs(["🔴 리더십 역량", "🔵 조직 만족도"])
         
         with tab1:
-            # 데이터 에디터로 체크박스 구현 (더 깔끔함)
             q_data = pd.DataFrame([
-                {"선택": False, "영역": "전략", "문항": "리더는 우리 팀의 비전과 목표를 명확히 제시합니까?", "ID": "L-001"},
-                {"선택": False, "영역": "소통", "문항": "리더는 팀원의 의견을 경청하고 피드백을 수용합니까?", "ID": "L-002"},
-                {"선택": False, "영역": "육성", "문항": "리더는 팀원의 성장과 경력 개발을 지원합니까?", "ID": "L-003"},
-                {"선택": False, "영역": "공정", "문항": "리더는 업무 배분과 평가를 공정하게 수행합니까?", "ID": "L-004"},
-                {"선택": False, "영역": "실행", "문항": "리더는 목표 달성을 위해 주도적으로 업무를 추진합니까?", "ID": "L-005"},
+                {"선택": False, "카테고리": "전략", "문항": "{{COURSE}} 과정의 난이도는 적절했나요?", "ID": "L-001"},
+                {"선택": False, "카테고리": "소통", "문항": "{{INSTRUCTOR}} 강사의 전문성은 어떠했나요?", "ID": "L-002"},
+                {"선택": False, "카테고리": "운영", "문항": "강의장은 쾌적했나요?", "ID": "L-003"},
+                {"선택": False, "카테고리": "성과", "문항": "교육 내용은 실무에 도움이 되나요?", "ID": "L-004"},
+                {"선택": False, "카테고리": "NPS", "문항": "향후 추천할 의향이 있나요?", "ID": "L-005"},
             ])
             edited_df = st.data_editor(
                 q_data, 
-                column_config={"선택": st.column_config.CheckboxColumn(required=True)}, 
+                column_config={
+                    "선택": st.column_config.CheckboxColumn(required=True),
+                    "문항": st.column_config.TextColumn(width="large")
+                }, 
                 hide_index=True, 
                 use_container_width=True
             )
@@ -108,161 +122,163 @@ if "1." in menu:
         count = len(selected_rows)
         
         with st.container(border=True):
-            st.metric("선택된 문항 수", f"{count}개")
+            st.markdown(f"선택된 문항: <span style='color:#4f46e5; font-size:1.2em; font-weight:bold;'>{count}개</span>", unsafe_allow_html=True)
+            
             if count > 0:
-                st.write("선택 목록:")
+                st.divider()
                 for idx, row in selected_rows.iterrows():
-                    st.text(f"- {row['문항'][:15]}...")
-            else:
-                st.caption("좌측 리스트에서 문항을 선택하세요.")
+                    st.text(f"• {row['카테고리']}: {row['문항'][:15]}...")
             
-            st.markdown("---")
-            st.text_input("설문지 제목", value="2026 상반기 리더십 진단")
+            st.divider()
+            form_title = st.text_input("설문지 제목", value="3월 신입사원 교육 만족도 조사")
             
-            if st.button("🚀 Google Forms 생성", type="primary", disabled=(count==0)):
+            if st.button("🚀 Google Form 생성", type="primary", disabled=(count==0)):
                 with st.spinner("Google API 연동 중..."):
                     time.sleep(1.5)
-                st.toast("설문지 생성이 완료되었습니다!", icon="✅")
-                st.success(f"**[링크 생성 완료]** forms.google.com/v/leadership_2026")
+                st.toast("설문지가 생성되었습니다!", icon="✅")
+                st.success(f"[링크 생성 완료]\n\nforms.google.com/v/simulation_1234")
 
 # ==============================================================================
-# [MODULE 2] 데이터 수집 및 표준화 (핵심: 마스킹 시각화)
+# [MODULE 2] 데이터 수집/표준화 (React UI 로직 이식)
 # ==============================================================================
 elif "2." in menu:
-    st.info("💡 **핵심 기능:** 파편화된 구글 시트를 업로드하면, AI가 개인정보와 고유명사를 **자동으로 치환(Masking)**하여 표준화합니다.")
-    
-    # 1. 업로드 섹션
-    with st.expander("📤 데이터 불러오기 (Google Sheets)", expanded=True):
-        c1, c2 = st.columns([3, 1])
-        with c1:
-            url = st.text_input("구글 시트 URL 입력", placeholder="https://docs.google.com/spreadsheets/...")
-        with c2:
-            st.write("") # 여백
-            st.write("") 
-            load_btn = st.button("데이터 로드 및 분석", type="primary")
+    st.info("💡 핵심 기능: 입력된 자연어를 AI가 분석하여 '변수(과정명, 강사명)'를 치환하고 중복 문항을 걸러냅니다.")
+
+    col_input, col_preview = st.columns([1.5, 1])
+
+    with col_input:
+        st.markdown("### 1. 데이터 입력 및 설정")
+        with st.container(border=True):
+            # React 앱의 변수 설정 부분 반영
+            c1, c2 = st.columns(2)
+            with c1:
+                course_name = st.text_input("과정명 (Variable A)", value="신임팀장과정")
+            with c2:
+                instructor_name = st.text_input("강사명 (Variable B)", value="김철수")
             
-    if load_btn:
-        # 가짜 로딩 애니메이션
-        with st.status("데이터 파이프라인 가동 중...", expanded=True) as status:
-            st.write("1. 구글 시트 연결 중... (API)")
-            time.sleep(0.5)
-            st.write("2. 컬럼 헤더 자동 매핑 중...")
-            time.sleep(0.5)
-            st.write("3. 자연어 처리(NLP)를 통한 변수 치환(Masking) 중...")
-            time.sleep(1)
-            status.update(label="전처리 완료!", state="complete", expanded=False)
+            raw_text = st.text_area(
+                "원시 데이터 (Raw Data from Excel)", 
+                height=200,
+                value="""1. 신임팀장과정 과정에 대해 만족하십니까?
+Q2) 김철수 강사의 강의는 어땠나요?
+3. 강의 시간은 적절했나요?
+4. 식사는 맛있었나요?"""
+            )
             
+            analyze_btn = st.button("데이터 분석 및 전처리 실행 (Analyze)", type="primary")
+
+    with col_preview:
+        st.markdown("### 2. 실시간 처리 로직 Preview")
+        with st.container(border=True):
+            st.markdown("""
+            <div style="background-color:#f1f5f9; padding:10px; border-radius:5px; margin-bottom:10px;">
+                <code style="color:#4f46e5; font-weight:bold;">STEP 1: Cleaning</code><br>
+                <span style="font-size:12px; color:#64748b;">숫자, 특수문자, 공백 제거 (Regex)</span>
+            </div>
+            <div style="background-color:#f1f5f9; padding:10px; border-radius:5px; margin-bottom:10px;">
+                <code style="color:#4f46e5; font-weight:bold;">STEP 2: Masking</code><br>
+                <span style="font-size:12px; color:#64748b;">변수 치환 (Privacy & Standardization)</span><br>
+                <span style="font-size:12px;">• {course} → <b>{{COURSE}}</b></span><br>
+                <span style="font-size:12px;">• {instructor} → <b>{{INSTRUCTOR}}</b></span>
+            </div>
+            """, unsafe_allow_html=True)
+            st.caption("※ 분석 버튼을 누르면 DB 대조 결과가 아래에 표시됩니다.")
+
+    # 분석 결과 표시 (React의 Modal 느낌을 인라인으로 구현)
+    if analyze_btn:
+        with st.spinner("AI가 문항을 분석하고 DB와 대조 중입니다..."):
+            time.sleep(1.5)
+            st.session_state.analysis_result = True
+            
+    if st.session_state.analysis_result:
         st.divider()
+        st.subheader("🔍 분석 결과 리포트 (DB Match Simulation)")
         
-        # 2. 전처리 결과 비교 (Before & After) - 이 부분이 중요!
-        st.subheader("🔍 데이터 표준화 결과 (Before vs After)")
-        
-        # 시뮬레이션 데이터
-        comparison_data = [
-            {
-                "상태": "✅ 변환", 
-                "원본 문항 (User Input)": "이번 **신임팀장과정**은 만족스러웠나요?", 
-                "표준화 문항 (DB Stored)": "이번 **{{COURSE}}**은 만족스러웠나요?", 
-                "비고": "과정명 자동 치환"
-            },
-            {
-                "상태": "✅ 변환", 
-                "원본 문항 (User Input)": "**김철수 강사님**의 강의는 어땠습니까?", 
-                "표준화 문항 (DB Stored)": "**{{INSTRUCTOR}}**의 강의는 어땠습니까?", 
-                "비고": "강사명 자동 치환"
-            },
-            {
-                "상태": "🆕 신규", 
-                "원본 문항 (User Input)": "연수원 식당 밥맛은 어땠나요?", 
-                "표준화 문항 (DB Stored)": "연수원 식당 밥맛은 어땠나요?", 
-                "비고": "DB에 없는 문항 (자동 추가)"
-            }
+        # 분석 로직 시뮬레이션 데이터
+        results = [
+            {"status": "existing", "orig": "신임팀장과정 과정에 대해 만족하십니까?", "clean": "{{COURSE}} 과정에 대해 만족하십니까?", "note": "기존 문항 일치 (자동 병합)"},
+            {"status": "existing", "orig": "김철수 강사의 강의는 어땠나요?", "clean": "{{INSTRUCTOR}} 강사의 강의는 어땠나요?", "note": "기존 문항 일치 (자동 병합)"},
+            {"status": "similar", "orig": "강의 시간은 적절했나요?", "clean": "강의 시간은 적절했나요?", "note": "유사 문항 발견: '교육 시간 배분은 적절했나요?'"},
+            {"status": "new", "orig": "식사는 맛있었나요?", "clean": "식사는 맛있었나요?", "note": "DB에 없는 신규 문항 (등록 필요)"},
         ]
         
-        st.dataframe(
-            pd.DataFrame(comparison_data), 
-            use_container_width=True,
-            column_config={
-                "상태": st.column_config.TextColumn("Status", width="small"),
-                "원본 문항 (User Input)": st.column_config.TextColumn("원본 데이터", width="large"),
-                "표준화 문항 (DB Stored)": st.column_config.TextColumn("표준화 데이터 (DB적재용)", width="large"),
-            }
-        )
-        
-        btn_col1, btn_col2 = st.columns([1,4])
-        with btn_col1:
-            if st.button("최종 승인 및 DB 저장"):
+        # 결과 요약
+        new_count = len([r for r in results if r['status'] == 'new'])
+        st.warning(f"총 4개 문항 중 {new_count}개의 새로운 문항이 감지되었습니다.")
+
+        # 리스트 뷰 (React UI 스타일)
+        for item in results:
+            # 상태별 스타일 정의
+            if item['status'] == 'existing':
+                badge = '<span class="badge-exist">기존 (Existing)</span>'
+                border_color = "#e2e8f0"
+                bg_color = "white"
+            elif item['status'] == 'similar':
+                badge = '<span class="badge-sim">유사 (Similar)</span>'
+                border_color = "#fef08a"
+                bg_color = "#fefce8"
+            else: # new
+                badge = '<span class="badge-new">신규 (New)</span>'
+                border_color = "#ffedd5"
+                bg_color = "#fff7ed"
+
+            st.markdown(f"""
+            <div style="border:1px solid {border_color}; background-color:{bg_color}; padding:15px; border-radius:8px; margin-bottom:10px; display:flex; align-items:center;">
+                <div style="width:100px;">{badge}</div>
+                <div style="flex-grow:1; margin-left:15px;">
+                    <div style="font-size:12px; color:#94a3b8; text-decoration:line-through;">{item['orig']}</div>
+                    <div style="font-size:15px; font-weight:600; color:#1e293b;">{item['clean']} <span style="font-size:12px; color:#4f46e5;">(Masking OK)</span></div>
+                    <div style="font-size:12px; color:#64748b; margin-top:4px;">{item['note']}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        c1, c2 = st.columns([4, 1])
+        with c2:
+            if st.button("확인 및 DB 저장"):
                 st.balloons()
-                st.success("BigQuery 데이터베이스에 152건의 데이터가 안전하게 저장되었습니다.")
+                st.success("데이터베이스에 성공적으로 반영되었습니다.")
+                st.session_state.analysis_result = None # 초기화
 
 # ==============================================================================
-# [MODULE 3] AI 분석 (차트 + 채팅 UI)
+# [MODULE 3] AI 분석
 # ==============================================================================
 elif "3." in menu:
-    # 탭으로 정량/정성 분석 분리
     tab_quant, tab_qual = st.tabs(["📊 정량 데이터 분석", "💬 정성 데이터(AI) 분석"])
     
     with tab_quant:
-        # 지표 카드
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("총 응답자", "1,240명", "+12%")
         m2.metric("평균 만족도", "4.5 / 5.0", "+0.2")
-        m3.metric("NPS (추천의향)", "72점", "Excellent")
+        m3.metric("NPS", "72점", "Excellent")
         m4.metric("응답률", "94%", "+2%")
         
-        st.write("")
-        
-        # 차트 영역
-        c1, c2 = st.columns(2)
-        with c1:
-            st.markdown("##### 📌 과정별 만족도 비교")
-            chart_data = pd.DataFrame({
-                "과정명": ["신임팀장", "승진자", "핵심가치", "DT교육"],
-                "만족도": [4.8, 4.2, 4.5, 3.9],
-                "목표치": [4.5, 4.5, 4.5, 4.5]
-            })
-            st.bar_chart(chart_data, x="과정명", y=["만족도", "목표치"], color=["#4e73df", "#eaecf4"])
-            
-        with c2:
-            st.markdown("##### 📌 항목별 상세 점수")
-            df_detail = pd.DataFrame({
-                "항목": ["강사 전문성", "교육 내용", "운영 원활성", "환경/시설"],
-                "점수": [4.9, 4.5, 4.2, 3.8]
-            })
-            st.dataframe(df_detail, use_container_width=True, hide_index=True)
+        st.markdown("##### 📌 과정별 만족도 비교")
+        chart_data = pd.DataFrame({
+            "과정명": ["신임팀장", "승진자", "핵심가치", "DT교육"],
+            "만족도": [4.8, 4.2, 4.5, 3.9],
+            "목표치": [4.5, 4.5, 4.5, 4.5]
+        })
+        st.bar_chart(chart_data, x="과정명", y=["만족도", "목표치"], color=["#4e73df", "#eaecf4"])
 
     with tab_qual:
-        st.markdown("""
-        <div style="background-color:#e8f4f8; padding:15px; border-radius:10px; margin-bottom:15px;">
-        🤖 <b>Gemini AI Analysis</b><br>
-        수백 개의 주관식 코멘트를 AI가 읽고, 긍정/부정/제언 사항으로 자동 분류합니다.
-        </div>
-        """, unsafe_allow_html=True)
+        st.info("🤖 Gemini AI Analysis: 수백 개의 주관식 코멘트를 읽고 핵심 키워드를 추출합니다.")
         
         col_chat, col_result = st.columns([1, 2])
-        
         with col_chat:
-            st.write("Analyzing...")
             with st.chat_message("user"):
-                st.write("이번 과정의 주관식 피드백을 요약해줘.")
+                st.write("이번 과정 피드백 요약해줘.")
             with st.chat_message("ai", avatar="🤖"):
-                st.write("네, 총 152건의 데이터를 분석했습니다.")
-                st.write("주요 키워드는 **#실무적용**, **#시간부족** 입니다.")
+                st.write("152건 분석 완료. 주요 이슈는 #실무적용과 #시간부족입니다.")
         
         with col_result:
-            st.subheader("📝 AI 핵심 요약 리포트")
             with st.expander("1. 긍정 피드백 (Positive)", expanded=True):
-                st.markdown("- **현업 적용성:** 배운 툴을 당장 내일 쓸 수 있어서 좋았다는 평이 지배적 (45건)")
-                st.markdown("- **강사 열정:** 강사님의 사례 중심 설명이 이해를 도왔음 (30건)")
-            
+                st.write("👍 현업 적용성: 당장 쓸 수 있는 툴 제공 (45건)")
             with st.expander("2. 개선 요청 (Negative)", expanded=True):
-                st.markdown("- **시간 부족:** 실습 시간이 턱없이 부족했다는 의견이 많음. (20건)")
-                st.markdown("- **시설 문제:** 오후에 에어컨 소음 때문에 집중하기 어려웠음. (5건)")
-            
-            st.info("💡 **AI 제언:** 차기 차수에는 실습 시간을 2시간 더 배정하는 커리큘럼 조정이 필요합니다.")
+                st.write("👎 시간 부족: 실습 시간 확대 요망 (20건)")
 
 # ==============================================================================
-# [MODULE 4] 보고서 (미리보기 UI 개선)
+# [MODULE 4] 리포트 센터
 # ==============================================================================
 elif "4." in menu:
     col_opt, col_preview = st.columns([1, 2])
@@ -270,40 +286,23 @@ elif "4." in menu:
     with col_opt:
         st.subheader("⚙️ 보고서 설정")
         with st.container(border=True):
-            st.selectbox("프로젝트 선택", ["2026 신임팀장 과정", "2025 전사 조직진단"])
-            st.radio("포맷 선택", ["PDF (상세보고용)", "PPT (발표용)", "Excel (Raw Data)"])
+            st.selectbox("프로젝트", ["2026 신임팀장 과정", "2025 전사 조직진단"])
+            st.radio("포맷", ["PDF (상세)", "PPT (발표)", "Excel"])
             st.checkbox("AI 요약 포함", value=True)
-            st.checkbox("부서별 비교 장표 포함", value=True)
             
-            st.write("")
-            if st.button("보고서 생성 및 다운로드", type="primary"):
-                with st.spinner("문서 렌더링 중..."):
-                    time.sleep(2)
-                st.success("다운로드 준비 완료!")
+            if st.button("다운로드", type="primary"):
+                with st.spinner("생성 중..."):
+                    time.sleep(1)
+                st.success("다운로드 완료!")
     
     with col_preview:
         st.subheader("📄 미리보기")
-        # HTML과 CSS로 문서를 흉내낸 박스 생성
         st.markdown("""
-        <div style="border:1px solid #ddd; padding:40px; background-color:white; height:500px; box-shadow: 5px 5px 15px rgba(0,0,0,0.1);">
-            <div style="text-align:center; border-bottom:2px solid #333; padding-bottom:20px; margin-bottom:20px;">
-                <h2 style="color:#000;">2026 신임팀장 리더십 진단 결과보고</h2>
-                <p style="color:#666;">2026.01.15 | HRD팀</p>
-            </div>
-            <h4>1. Executive Summary</h4>
-            <p style="font-size:14px; color:#555; line-height:1.6;">
-                본 과정의 종합 만족도는 <b>4.5점</b>으로 전년 대비 <b>0.2점 상승</b>하였습니다.<br>
-                특히 '강사 전문성' 영역이 4.9점으로 가장 높았으며, 참여자들은 실무 적용성에 높은 점수를 주었습니다.<br>
-                다만, 실습 시간 부족에 대한 개선 요구가 식별되었습니다.
-            </p>
-            <br>
-            <h4>2. 주요 지표 (KPI)</h4>
-            <div style="display:flex; justify-content:space-around; background:#f0f2f6; padding:15px; border-radius:5px;">
-                <div style="text-align:center;"><b>만족도</b><br><span style="color:blue; font-size:20px;">4.5</span></div>
-                <div style="text-align:center;"><b>NPS</b><br><span style="color:green; font-size:20px;">72</span></div>
-                <div style="text-align:center;"><b>수료율</b><br><span style="color:black; font-size:20px;">98%</span></div>
-            </div>
-            <br>
-            <p style="text-align:center; color:#999; margin-top:50px;">- Click Insight Hub Generated Report -</p>
+        <div style="border:1px solid #ddd; padding:40px; background-color:white; box-shadow: 5px 5px 15px rgba(0,0,0,0.1);">
+            <h3 style="text-align:center;">2026 신임팀장 리더십 진단 결과</h3>
+            <p style="text-align:center; color:#666;">2026.01.15 | HRD팀</p>
+            <hr>
+            <h4>1. Summary</h4>
+            <p style="color:#555;">종합 만족도는 <b>4.5점</b>으로 전년 대비 상승했습니다.</p>
         </div>
         """, unsafe_allow_html=True)
