@@ -1,9 +1,10 @@
 from io import BytesIO
-from pptx import Presentation
-from pptx.util import Inches, Pt
 
 
 def build_pptx_report(title, summary_lines, highlights):
+    from pptx import Presentation
+    from pptx.util import Inches, Pt
+
     presentation = Presentation()
     presentation.slide_width = Inches(13.33)
     presentation.slide_height = Inches(7.5)
