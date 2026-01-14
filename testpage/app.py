@@ -2,160 +2,218 @@ import streamlit as st
 import pandas as pd
 import time
 import random
+from datetime import datetime
 
-# 페이지 설정
+# --- 페이지 설정 ---
 st.set_page_config(
-    page_title="HR 진단 데이터 통합 시스템 (Demo)",
-    page_icon="📊",
-    layout="wide"
+    page_title="Click Insight Hub (HR 진단 통합 시스템)",
+    page_icon="💠",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# 스타일 커스텀 (깔끔한 보고용)
+# --- 스타일 커스텀 (기업용 대시보드 느낌) ---
 st.markdown("""
     <style>
-    .main {background-color: #F9F9F9;}
-    .stButton>button {width: 100%; border-radius: 5px; font-weight: bold;}
-    .metric-card {background-color: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+    .main {background-color: #f8f9fa;}
+    .block-container {padding-top: 2rem;}
+    .stButton>button {width: 100%; border-radius: 5px; font-weight: 600;}
+    .success-box {padding: 1rem; background-color: #d4edda; color: #155724; border-radius: 5px; margin-bottom: 1rem;}
     </style>
     """, unsafe_allow_html=True)
 
-# 사이드바 메뉴
+# --- 사이드바: 4단계 프로세스 메뉴 ---
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/3064/3064197.png", width=50) # 로고 예시
-    st.title("HR Data Hub")
-    menu = st.radio("메뉴 선택", 
-        ["1. 설문 데이터 등록 (Standardization)", 
-         "2. 문항 기반 설문 생성 (Re-use)", 
-         "3. 통합 대시보드 (Insight)"])
-    st.info("※ 임원 보고용 데모 버전입니다.\n실제 데이터는 저장되지 않습니다.")
-
-# --- [메뉴 1] 데이터 등록 및 표준화 ---
-if menu == "1. 설문 데이터 등록 (Standardization)":
-    st.title("📂 설문 데이터 등록 및 표준화")
-    st.markdown("구글 시트의 데이터를 불러와 **표준 포맷으로 변환**하고 **문항 중복을 제거**합니다.")
-    
-    col1, col2 = st.columns([1, 2])
-    
-    with col1:
-        st.subheader("1. 프로젝트 정보")
-        with st.form("input_form"):
-            client = st.text_input("고객사", value="A전자")
-            course = st.text_input("과정명", value="2026 신임 팀장 리더십 과정")
-            instructor = st.text_input("강사명", value="김철수")
-            date = st.date_input("진단 일자")
-            url = st.text_input("구글 시트 URL", placeholder="https://docs.google.com/...")
-            
-            submit = st.form_submit_button("데이터 가져오기 및 분석 시작")
-
-    with col2:
-        if submit:
-            # 1. 로딩 시뮬레이션
-            with st.spinner('구글 시트 연결 중...'):
-                time.sleep(1)
-            st.success("✅ 구글 시트 데이터 로드 완료 (52명 응답)")
-            
-            # 2. 컬럼 매핑 시뮬레이션
-            st.subheader("2. 데이터 컬럼 매핑 (자동 감지)")
-            st.info("💡 AI가 시트의 컬럼을 분석하여 표준 필드와 매칭했습니다. 맞는지 확인해주세요.")
-            
-            map_df = pd.DataFrame({
-                "표준 필드": ["참여자 성명", "사번/ID", "소속 부서", "직급"],
-                "감지된 시트 헤더": ["이름", "사원번호", "팀명", "직위"],
-                "신뢰도": ["99%", "98%", "95%", "90%"]
-            })
-            st.dataframe(map_df, hide_index=True, use_container_width=True)
-            
-            # 3. 문항 분석 및 중복 제거 (핵심 기능)
-            with st.spinner('문항 텍스트 분석 및 중복 검사 중... (Natural Language Processing)'):
-                time.sleep(2)
-            
-            st.subheader("3. 문항 표준화 및 중복 제거 결과")
-            st.warning("⚠️ 총 10개 문항 중 **8개는 기존 DB에 존재**하며, **2개는 신규 문항**입니다.")
-            
-            # 문항 대조 시각화
-            match_data = [
-                {"구분": "✅ 일치 (자동병합)", "원본 문항 (Excel)": "이번 신임 팀장 리더십 과정에 만족하나요?", "표준화 문항 (DB)": "{{COURSE}} 과정에 만족하십니까?", "유사도": "98%"},
-                {"구분": "✅ 일치 (자동병합)", "원본 문항 (Excel)": "김철수 강사의 강의 내용은 유익했나요?", "표준화 문항 (DB)": "{{INSTRUCTOR}} 강사의 강의 내용은 유익했습니까?", "유사도": "96%"},
-                {"구분": "🆕 신규 (DB추가)", "원본 문항 (Excel)": "연수원 식당 메뉴는 입에 맞으셨나요?", "표준화 문항 (DB)": "(신규 등록 예정)", "유사도": "0%"},
-            ]
-            st.table(pd.DataFrame(match_data))
-            
-            st.button("분석 결과 확정 및 DB 저장", type="primary")
-
-        else:
-            st.info("👈 좌측 폼에 정보를 입력하고 버튼을 눌러주세요.")
-            st.image("https://www.Notion.so/image/https%3A%2F%2Fs3-us-west-2.amazonaws.com%2Fsecure.notion-static.com%2F...dummy_image...", caption="데이터 흐름 예시", width=400) # (이미지 없어도 됨)
-
-
-# --- [메뉴 2] 설문지 생성 ---
-elif menu == "2. 문항 기반 설문 생성 (Re-use)":
-    st.title("📝 표준 문항 기반 설문 생성")
-    st.markdown("DB에 축적된 **표준 문항(질문은행)**을 활용하여 구글 폼을 자동으로 생성합니다.")
-    
-    col_a, col_b = st.columns([2, 1])
-    
-    with col_a:
-        st.subheader("STEP 1. 문항 장바구니")
-        # 탭으로 카테고리 구분
-        tab1, tab2, tab3 = st.tabs(["만족도(공통)", "리더십 진단", "강사 평가"])
-        
-        with tab1:
-            st.markdown("##### 공통 만족도 문항 선택")
-            q1 = st.checkbox("[객관식] 전반적인 과정 운영에 만족하십니까?")
-            q2 = st.checkbox("[객관식] 교육 내용은 현업 활용도가 높습니까?")
-            q3 = st.checkbox("[주관식] 본 과정에서 가장 유익했던 점은 무엇입니까?")
-            q4 = st.checkbox("[객관식] 교육 장소 및 환경은 쾌적했습니까?")
-        
-        with tab2:
-            st.write("리더십 진단 문항 리스트...")
-            
-    with col_b:
-        st.subheader("STEP 2. 설정 및 생성")
-        with st.container(border=True):
-            st.text_input("설문지 제목", value="2026년 3월 신입사원 교육 만족도")
-            st.selectbox("대상 변수 치환", ["{{COURSE}} → 신입사원 입문과정", "{{INSTRUCTOR}} → 홍길동"])
-            
-            if st.button("🚀 구글 폼 자동 생성하기", type="primary"):
-                with st.spinner("Google Forms API 통신 중..."):
-                    time.sleep(1.5)
-                st.success("생성 완료!")
-                st.markdown("**생성된 링크:** [https://forms.google.com/v/12345...](len)")
-                st.balloons()
-
-# --- [메뉴 3] 대시보드 ---
-elif menu == "3. 통합 대시보드 (Insight)":
-    st.title("📈 HR 진단 통합 대시보드")
-    st.markdown("전사 교육/진단 현황을 실시간으로 모니터링합니다.")
-    
-    # 상단 지표 (Metric)
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("누적 진단 데이터", "12,450건", "+152건")
-    m2.metric("보유 표준 문항", "342개", "+2개")
-    m3.metric("평균 만족도", "4.5/5.0", "▲ 0.1")
-    m4.metric("올해 진행 프로젝트", "24건")
+    st.image("https://cdn-icons-png.flaticon.com/512/2920/2920349.png", width=60) # 로고
+    st.title("Click Insight Hub")
+    st.caption("HR Consulting Data Platform")
     
     st.markdown("---")
+    menu = st.radio("프로세스 단계 선택", [
+        "1. 문항 구성 (Question Bank)",
+        "2. 데이터 수집 (Data Collection)",
+        "3. 데이터 분석 (AI Analysis)",
+        "4. 보고서 작성 (Reporting)"
+    ])
     
-    # 차트 영역
-    c1, c2 = st.columns(2)
+    st.markdown("---")
+    st.info(f"System Status: Online\nDB Connection: BigQuery ✅\nAI Engine: Gemini Pro ⚡")
+
+# --- [1단계] 문항 구성 (Deliverable: 문항 DB, 구글폼 생성) ---
+if menu == "1. 문항 구성 (Question Bank)":
+    st.header("1️⃣ 설문/진단 문항 구성")
+    st.markdown("**목표:** 표준 문항 DB(BigQuery)에서 질문을 선택하여 구글 폼을 자동 생성합니다.")
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.subheader("🛒 클릭 공용 문항 Pool (질문은행)")
+        # 탭으로 카테고리 구분
+        tab1, tab2, tab3 = st.tabs(["리더십 진단", "만족도 조사", "조직문화"])
+        
+        with tab1:
+            st.markdown("##### 리더십 역량 진단 표준 문항")
+            q_list = [
+                "[전략] 리더는 우리 팀의 비전과 목표를 명확히 제시합니까?",
+                "[소통] 리더는 팀원의 의견을 경청하고 피드백을 수용합니까?",
+                "[육성] 리더는 팀원의 성장과 경력 개발을 지원합니까?",
+                "[공정] 리더는 업무 배분과 평가를 공정하게 수행합니까?",
+                "[윤리] 리더는 윤리 규범을 준수하고 솔선수범합니까?"
+            ]
+            selected_qs = []
+            for q in q_list:
+                if st.checkbox(q):
+                    selected_qs.append(q)
+                    
+    with col2:
+        st.subheader("⚙️ 설문지 생성 설정")
+        with st.container(border=True):
+            st.text_input("설문지 제목", value="2026년 상반기 팀장 리더십 진단")
+            st.date_input("진단 종료일")
+            st.selectbox("대상 변수 치환 설정", ["사용 안함", "{{NAME}} → 피진단자명", "{{TEAM}} → 부서명"])
+            
+            st.markdown(f"**선택된 문항 수:** {len(selected_qs)}개")
+            
+            if st.button("🚀 구글 폼 생성하기 (Google Forms API)", type="primary"):
+                with st.spinner("Google Forms API와 통신 중..."):
+                    time.sleep(2) # 로딩 시뮬레이션
+                st.success("설문지가 생성되었습니다!")
+                st.markdown(f"**생성된 링크:** [https://forms.google.com/view/leadership_2026](len)")
+                st.info("클릭하면 구글 폼 미리보기로 이동합니다.")
+
+# --- [2단계] 데이터 수집 (Deliverable: 데이터 업로드 Form, 통합 DB) ---
+elif menu == "2. 데이터 수집 (Data Collection)":
+    st.header("2️⃣ 데이터 수집 및 표준화")
+    st.markdown("**목표:** 파편화된 구글 시트 데이터를 가져와 표준 포맷으로 변환 후 통합 DB에 적재합니다.")
+    
+    st.subheader("📤 설문 결과 데이터 업로드")
+    
+    with st.form("upload_form"):
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            client = st.text_input("고객사명", placeholder="ex) 삼성전자")
+        with c2:
+            course = st.text_input("과정/진단명", placeholder="ex) 신임 임원 과정")
+        with c3:
+            instructor = st.text_input("강사명 (필요시)", placeholder="ex) 홍길동")
+            
+        url = st.text_input("구글 시트 URL (편집 권한 필요)", placeholder="https://docs.google.com/spreadsheets/d/...")
+        
+        # 전처리 옵션 시각화
+        st.caption("✅ **자동 전처리 적용:** 1.컬럼 매핑, 2.개인정보 비식별화, 3.과정명/강사명 변수({{VAR}}) 치환")
+        
+        submit = st.form_submit_button("데이터 가져오기 및 DB 적재")
+        
+    if submit and url:
+        # 프로세스 시각화
+        progress_text = "작업 진행 중..."
+        my_bar = st.progress(0, text=progress_text)
+
+        for percent_complete in range(100):
+            time.sleep(0.02)
+            if percent_complete == 20:
+                my_bar.progress(percent_complete, text="구글 시트 데이터 로드 중...")
+            elif percent_complete == 50:
+                my_bar.progress(percent_complete, text="컬럼 표준화 및 변수 치환(Masking) 중...")
+            elif percent_complete == 80:
+                my_bar.progress(percent_complete, text="BigQuery 통합 테이블에 적재 중...")
+            else:
+                my_bar.progress(percent_complete, text=progress_text)
+                
+        time.sleep(0.5)
+        st.success(f"**[{client}] {course}** 데이터 45건이 통합 DB에 성공적으로 저장되었습니다.")
+        
+        # 결과 미리보기 (가상의 데이터프레임)
+        st.subheader("📊 적재 데이터 미리보기 (BigQuery)")
+        df_mock = pd.DataFrame({
+            "project_id": ["P-2026-001"]*3,
+            "q_standard": ["{{COURSE}} 내용 만족도", "{{INSTRUCTOR}} 강의 전달력", "교육장 환경 만족도"],
+            "response_avg": [4.8, 4.9, 4.2],
+            "upload_date": [datetime.now().strftime("%Y-%m-%d")]*3
+        })
+        st.dataframe(df_mock, use_container_width=True)
+
+# --- [3단계] 데이터 분석 (Deliverable: 정성 데이터 AI 분석, 개별 조회) ---
+elif menu == "3. 데이터 분석 (AI Analysis)":
+    st.header("3️⃣ 데이터 분석 (Gemini AI)")
+    st.markdown("**목표:** 정량 데이터는 자동 통계 처리하고, 정성(주관식) 데이터는 Gemini가 분석합니다.")
+    
+    # 상단: 프로젝트 선택
+    option = st.selectbox("분석할 프로젝트 선택", ["2026 A사 신임팀장 과정", "2025 B사 전사 조직진단", "2025 C사 임원 코칭"])
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("📈 정량 평가 분석 (Automated)")
+        # 차트 시뮬레이션
+        chart_data = pd.DataFrame({
+            '항목': ['전략제시', '의사소통', '조직관리', '성과관리', '자기개발'],
+            '점수': [4.2, 3.8, 4.5, 3.9, 4.1],
+            '업계평균': [4.0, 4.0, 4.2, 3.8, 4.0]
+        })
+        st.bar_chart(chart_data.set_index('항목'))
+        st.info("💡 '의사소통' 항목이 업계 평균 대비 0.2점 낮습니다.")
+
+    with col2:
+        st.subheader("🧠 정성 평가 AI 요약 (Gemini)")
+        
+        # AI 분석 로딩 효과
+        with st.chat_message("ai", avatar="🤖"):
+            st.write("주관식 응답 150건을 분석 중입니다...")
+            time.sleep(1.5)
+            st.markdown(f"""
+            **[{option}] 주관식 핵심 요약**
+            
+            **1. 긍정 키워드 (Positive):**
+            * **#실무적용:** 현업에 바로 쓸 수 있는 툴 제공이 좋았음.
+            * **#강사전문성:** 강사님의 풍부한 사례 공유가 인상적임.
+            
+            **2. 개선 요청 (Negative):**
+            * **#시간부족:** 실습 시간이 너무 짧아 아쉬움 (20건).
+            * **#환경:** 교육장 환기가 잘 안 됨.
+            
+            **3. AI 제언:**
+            차기 과정 설계 시 **실습 시간을 1시간 이상 추가**하고, 교육장 시설 점검이 필요합니다.
+            """)
+
+    st.markdown("---")
+    with st.expander("🔍 개별 결과 조회 (Drill-down)"):
+        st.write("특정 참가자나 부서별 상세 데이터를 조회합니다.")
+        st.dataframe(pd.DataFrame({"부서":["영업팀","인사팀"], "성명":["김**","이**"], "평균점수":[4.5, 3.8]}), use_container_width=True)
+
+# --- [4단계] 보고서 작성 (Deliverable: PDF 생성, 표준 양식) ---
+elif menu == "4. 보고서 작성 (Reporting)":
+    st.header("4️⃣ 결과 보고서 생성")
+    st.markdown("**목표:** 분석된 데이터를 바탕으로 표준화된 '클릭 컨설팅'만의 보고서를 자동 생성합니다.")
+    
+    c1, c2 = st.columns([1, 1])
     
     with c1:
-        st.subheader("과정별 만족도 비교")
-        # 가짜 차트 데이터
-        chart_data = pd.DataFrame({
-            '과정명': ['신임팀장', '신입사원', '승진자과정', '임원특강', 'DT교육'],
-            '만족도': [4.8, 4.2, 3.9, 4.5, 4.1]
-        })
-        st.bar_chart(chart_data.set_index('과정명'))
+        st.subheader("📄 보고서 옵션 설정")
+        rpt_type = st.selectbox("보고서 유형", ["과정 결과보고서 (PPT)", "진단 결과보고서 (PDF)", "개인별 피드백 리포트 (PDF)"])
+        include_raw = st.checkbox("Raw Data 첨부", value=True)
+        include_ai = st.checkbox("AI 분석 코멘트 포함", value=True)
         
     with c2:
-        st.subheader("주요 키워드 (Word Cloud)")
-        st.write("💬 주관식 응답 AI 요약 결과")
-        # 워드클라우드 대신 칩 형태로 표현
-        st.markdown("""
-        <span style='background:#E1F5FE; padding:5px; border-radius:5px;'>#실무적용</span>
-        <span style='background:#FFF3E0; padding:5px; border-radius:5px;'>#강사열정</span>
-        <span style='background:#FFEBEE; padding:5px; border-radius:5px;'>#시간부족</span>
-        <span style='background:#E8F5E9; padding:5px; border-radius:5px;'>#동기부여</span>
-        """, unsafe_allow_html=True)
-        st.info("최근 '시간부족' 키워드가 상승하고 있습니다. (전월 대비 +15%)")
+        st.subheader("🖨️ 생성 및 다운로드")
+        st.warning("⚠️ 현재 데이터 분석이 완료된 상태입니다.")
+        
+        if st.button("보고서 생성 (Python-pptx/pdf 엔진)", type="primary"):
+            with st.spinner("보고서 레이아웃 구성 및 데이터 바인딩 중..."):
+                time.sleep(2)
+            
+            st.success("보고서 생성이 완료되었습니다!")
+            
+            # 다운로드 버튼 시뮬레이션
+            st.download_button(
+                label="📥 결과보고서_2026_신임팀장과정.pdf 다운로드",
+                data="fake data",
+                file_name="report.pdf",
+                mime="application/pdf"
+            )
+            
+    # 보고서 미리보기 이미지 (예시)
+    st.markdown("---")
+    st.subheader("📑 생성된 보고서 미리보기")
+    st.image("https://marketplace.canva.com/EAFhHMtxcBQ/1/0/1131w/canva-blue-simple-professional-business-project-report-pLw0Fv4fKzo.jpg", 
+             width=600, caption="자동 생성된 보고서 표지 및 요약 장표")
