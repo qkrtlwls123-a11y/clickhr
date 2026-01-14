@@ -27,9 +27,9 @@ def _fallback_summary(comments):
     }
 
 
-def analyze_comments(comments, api_key=None):
+def analyze_comments(comments, _key=None):
     if api_key is None:
-        api_key = os.getenv("AIzaSyBzb-IYcwArz5Si5sU5VYaGXckSY9s6Y50")
+        api_key = os.getenv("GEMINI_API_KEY")
 
     if not comments:
         return {
@@ -55,7 +55,7 @@ def analyze_comments(comments, api_key=None):
     ).encode("utf-8")
 
     req = request.Request(
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}",
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyBzb-IYcwArz5Si5sU5VYaGXckSY9s6Y50",
         data=payload,
         headers={"Content-Type": "application/json"},
         method="POST",
@@ -67,7 +67,7 @@ def analyze_comments(comments, api_key=None):
     except Exception as exc:
         return {
             "status": "error",
-            "message": f"Gemini API 호출 실패: {exc}",
+            "message": f"Gemini  호출 실패: {exc}",
             "result": None,
         }
 
