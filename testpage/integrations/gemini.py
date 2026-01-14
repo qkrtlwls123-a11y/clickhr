@@ -54,12 +54,11 @@ def analyze_comments(comments, _key=None):
     ).encode("utf-8")
 
     req = request.Request(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}",
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}",
         data=payload,
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-
     try:
         with request.urlopen(req, timeout=20) as response:
             response_data = json.loads(response.read().decode("utf-8"))
