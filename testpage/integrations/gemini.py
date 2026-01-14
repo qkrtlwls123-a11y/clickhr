@@ -27,20 +27,16 @@ def _fallback_summary(comments):
 
 
 def analyze_comments(comments, _key=None):
-    # [수정 1] API 키 공백 제거 (안전 장치)
+    # API 키 공백 제거
     api_key = (_key or os.getenv("GEMINI_API_KEY", "")).strip()
 
     if not comments:
-        return {
-            "status": "error",
-            "message": "코멘트가 비어 있습니다.",
-            "result": None,
-        }
+        return {"status": "error", "message": "코멘트 없음", "result": None}
 
     if not api_key:
         return {
             "status": "simulated",
-            "message": "GEMINI_API_KEY가 없어 로컬 요약을 반환합니다.",
+            "message": "API Key 없음 (로컬 요약)",
             "result": _fallback_summary(comments),
         }
 
@@ -51,14 +47,15 @@ def analyze_comments(comments, _key=None):
         }
     ).encode("utf-8")
 
-    # [수정 2] URL 변수를 먼저 정의 (순서 중요!)
-    # 모델명은 가장 안정적인 최신 별칭인 'gemini-1.5-flash' 사용
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    # [핵심 수정] 모델명을 'gemini-1.5-flash'로 변경 (가장 안정적)
+    # 만약 그래도 404가 뜨면 'gemini-pro'로 바꿔보세요.
+    model_name = "gemini-1.5-flash"
+    
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
 
-    # [수정 3] URL 정의 후 디버깅 출력 (이제 에러가 나지 않습니다)
     print(f"--- DEBUG ---")
-    print(f"API Key 길이: {len(api_key)}") 
-    print(f"요청 URL: {url}")
+    print(f"Model: {model_name}")
+    print(f"URL Start: {url[:50]}...") # 보안을 위해 키 부분은 숨김
     print(f"-------------")
 
     req = request.Request(
@@ -70,12 +67,16 @@ def analyze_comments(comments, _key=None):
 
     try:
         with request.urlopen(req, timeout=20) as response:
-            response_data = json.loads(response.read().decode("utf-8"))
+            if response.status == 200:
+                response_data = json.loads(response.read().decode("utf-8"))
+            else:
+                 return {"status": "error", "message": f"HTTP Error {response.status}", "result": None}
+                 
     except Exception as exc:
-        # 에러 발생 시 로그에 남기기 위해 메시지 상세화
+        # 에러가 나면 구체적인 메시지를 반환
         return {
             "status": "error",
-            "message": f"Gemini 호출 실패: {exc}",
+            "message": f"Gemini 호출 실패 ({exc}) - URL 확인 필요",
             "result": None,
         }
 
@@ -83,19 +84,18 @@ def analyze_comments(comments, _key=None):
     if not candidates:
         return {
             "status": "error",
-            "message": "Gemini 응답에 결과가 없습니다 (Safety Filter 등).",
+            "message": "Gemini 결과 없음 (Safety Filter 등)",
             "result": None,
         }
 
     text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-    result = {
-        "sentiment": "-",
-        "keywords": [],
-        "summary": text.strip() or "요약 결과가 비어 있습니다.",
-    }
-
+    
     return {
         "status": "success",
-        "message": "Gemini 분석 완료",
-        "result": result,
+        "message": "분석 완료",
+        "result": {
+            "sentiment": "-",
+            "keywords": [],
+            "summary": text.strip()
+        },
     }
