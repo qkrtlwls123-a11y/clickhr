@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>설문 자동화 시스템 데모</title>
+    
+    <!-- React & ReactDOM (CDN) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel (JSX 변환용) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS (스타일링) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* 추가 애니메이션 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- 아이콘 컴포넌트 (Lucide 아이콘을 SVG로 직접 구현하여 의존성 제거) ---
+        const Icons = {
+            Wand2: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>,
+            Database: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s 9-1.34 9-3V5"/></svg>,
+            FileSpreadsheet: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/></svg>,
+            Check: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+            AlertCircle: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+            ShoppingCart: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>,
+            LinkIcon: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
+            ArrowRight: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>,
+            Save: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+            Search: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        };
+
+        // --- 메인 앱 컴포넌트 ---
+        function SurveyApp() {
+            const [activeTab, setActiveTab] = useState('analysis'); 
+
+            // Feature 1 States
+            const [courseName, setCourseName] = useState('신임팀장과정');
+            const [instructorName, setInstructorName] = useState('김철수');
+            const [rawInput, setRawInput] = useState(
+                `1. 신임팀장과정 과정에 대해 만족하십니까?
+Q2) 김철수 강사의 강의는 어땠나요?
+3. 강의 시간은 적절했나요?
+4. 식사는 맛있었나요?`
+            );
+            const [analyzedData, setAnalyzedData] = useState(null);
+            const [showDbModal, setShowDbModal] = useState(false);
+            const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+            // Feature 2 States
+            const [formTitle, setFormTitle] = useState('3월 신입사원 교육 만족도 조사');
+            const [cart, setCart] = useState([1, 2]);
+            const [isGenerating, setIsGenerating] = useState(false);
+            const [generatedLink, setGeneratedLink] = useState(null);
+            
+            const dbQuestions = [
+                { id: 1, text: "{{COURSE}} 과정의 난이도는 적절했나요?", category: "과정만족도" },
+                { id: 2, text: "{{INSTRUCTOR}} 강사의 전문성은 어떠했나요?", category: "강사평가" },
+                { id: 3, text: "강의장은 쾌적했나요?", category: "운영환경" },
+                { id: 4, text: "교육 내용은 실무에 도움이 되나요?", category: "현업적용" },
+                { id: 5, text: "향후 추천할 의향이 있나요?", category: "NPS" },
+                { id: 6, text: "식사의 질은 좋았나요?", category: "운영환경" },
+            ];
+
+            const handleAnalyze = () => {
+                setIsAnalyzing(true);
+                setTimeout(() => {
+                    const lines = rawInput.split('\n').filter(line => line.trim() !== '');
+                    const results = lines.map((line, index) => {
+                        let cleaned = line;
+                        cleaned = cleaned.replace(/^[\d\s\.Q\)]+/, '').trim();
+                        if (courseName) cleaned = cleaned.replaceAll(courseName, '{{COURSE}}');
+                        if (instructorName) cleaned = cleaned.replaceAll(instructorName, '{{INSTRUCTOR}}');
+
+                        let status = 'existing';
+                        let matchNote = '';
+                        if (cleaned.includes('식사')) {
+                            status = 'new';
+                        } else if (cleaned.includes('강의 시간')) {
+                            status = 'similar';
+                            matchNote = '유사 문항 발견: "교육 시간 배분은 적절했나요?"';
+                        }
+
+                        return { id: index, original: line, cleaned: cleaned, status: status, matchNote: matchNote };
+                    });
+                    setAnalyzedData(results);
+                    setIsAnalyzing(false);
+                    setShowDbModal(true);
+                }, 1000);
+            };
+
+            const handleSaveToDb = () => {
+                setShowDbModal(false);
+                alert("신규 문항이 데이터베이스에 등록되었습니다.");
+                setActiveTab('export');
+            };
+
+            const toggleCart = (id) => {
+                if (cart.includes(id)) setCart(cart.filter(itemId => itemId !== id));
+                else setCart([...cart, id]);
+            };
+
+            const handleGenerateForm = () => {
+                if (cart.length === 0) {
+                    alert("최소 1개 이상의 질문을 선택해주세요.");
+                    return;
+                }
+                setIsGenerating(true);
+                setTimeout(() => {
+                    setIsGenerating(false);
+                    setGeneratedLink(`https://docs.google.com/forms/d/e/simulation_${Math.floor(Math.random() * 10000)}/viewform`);
+                }, 1500);
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
+                    <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+                        <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                                <div className="bg-indigo-600 p-2 rounded-lg text-white"><Icons.Wand2 /></div>
+                                <h1 className="text-xl font-bold text-slate-800">SurveyOps Pro</h1>
+                            </div>
+                            <nav className="flex space-x-1 bg-slate-100 p-1 rounded-lg">
+                                <button onClick={() => setActiveTab('analysis')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'analysis' ? 'bg-white shadow text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}>1. 데이터 전처리</button>
+                                <button onClick={() => setActiveTab('export')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'export' ? 'bg-white shadow text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}>2. 폼 자동 생성</button>
+                            </nav>
+                        </div>
+                    </header>
+
+                    <main className="max-w-5xl mx-auto px-4 md:px-6 py-8">
+                        {activeTab === 'analysis' && (
+                            <div className="animate-fade-in space-y-6">
+                                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                                    <div className="p-6 border-b border-slate-100 bg-slate-50">
+                                        <h2 className="text-lg font-semibold flex items-center"><span className="mr-2 text-indigo-500"><Icons.Database /></span>설문 데이터 입력 및 변수 설정</h2>
+                                    </div>
+                                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div><label className="block text-sm font-medium text-slate-700 mb-1">과정명 (Course)</label><input type="text" value={courseName} onChange={(e) => setCourseName(e.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
+                                                <div><label className="block text-sm font-medium text-slate-700 mb-1">강사명 (Instructor)</label><input type="text" value={instructorName} onChange={(e) => setInstructorName(e.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-slate-700 mb-1">원시 데이터</label>
+                                                <textarea value={rawInput} onChange={(e) => setRawInput(e.target.value)} className="w-full h-48 border border-slate-300 rounded-lg px-4 py-3 font-mono text-sm focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                            </div>
+                                            <button onClick={handleAnalyze} disabled={isAnalyzing} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-lg flex items-center justify-center transition-colors shadow-sm">{isAnalyzing ? <span>분석 중...</span> : <><span className="mr-2"><Icons.Wand2 /></span>노이즈 제거 및 마스킹 실행</>}</button>
+                                        </div>
+                                        <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 relative">
+                                            <div className="absolute top-0 right-0 bg-slate-200 text-xs px-2 py-1 rounded-bl-lg text-slate-600 font-mono">PREVIEW</div>
+                                            <h3 className="text-sm font-bold text-slate-700 mb-4">실시간 처리 로직</h3>
+                                            <div className="space-y-4">
+                                                <div className="bg-white p-3 rounded border border-indigo-100 shadow-sm"><div className="text-xs text-indigo-500 font-bold mb-1">STEP 1: Cleaning</div><code className="text-xs text-slate-600 block bg-slate-100 p-2 rounded">text.replace(/^[0-9Q\.\)\s]+/, '')</code></div>
+                                                <div className="bg-white p-3 rounded border border-indigo-100 shadow-sm"><div className="text-xs text-indigo-500 font-bold mb-1">STEP 2: Masking</div><code className="text-xs text-slate-600 block bg-slate-100 p-2 rounded">text.replace('{courseName}', '&#123;&#123;COURSE&#125;&#125;')</code></div>
+                                            </div>
+                                            <div className="mt-6 p-4 bg-blue-50 border border-blue-100 rounded text-sm text-blue-800 flex"><span className="mr-2"><Icons.AlertCircle /></span>분석 버튼을 누르면 DB 대조 시뮬레이션 팝업이 뜹니다.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'export' && (
+                            <div className="animate-fade-in grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <div className="lg:col-span-2 space-y-4">
+                                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                                        <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center"><h2 className="font-semibold text-slate-800 flex items-center"><span className="mr-2 text-slate-500"><Icons.Search /></span>표준 문항 라이브러리 (DB)</h2><span className="text-xs bg-slate-200 px-2 py-1 rounded text-slate-600">{dbQuestions.length}개</span></div>
+                                        <div className="divide-y divide-slate-100">
+                                            {dbQuestions.map((q) => (
+                                                <div key={q.id} className={`p-4 flex items-start cursor-pointer hover:bg-indigo-50 transition-colors ${cart.includes(q.id) ? 'bg-indigo-50/50' : ''}`} onClick={() => toggleCart(q.id)}>
+                                                    <div className="mr-4 mt-1"><div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${cart.includes(q.id) ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 bg-white'}`}>{cart.includes(q.id) && <Icons.Check />}</div></div>
+                                                    <div className="flex-1"><div className="text-xs text-indigo-500 font-semibold mb-1">{q.category}</div><p className="text-slate-700 font-medium">{q.text}</p></div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="lg:col-span-1 space-y-4">
+                                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 sticky top-24">
+                                        <h3 className="text-lg font-bold text-slate-800 flex items-center mb-4"><span className="mr-2 text-indigo-600"><Icons.ShoppingCart /></span>문항 장바구니</h3>
+                                        <div className="mb-6"><label className="block text-xs font-bold text-slate-500 uppercase mb-1">설문지 제목</label><input type="text" value={formTitle} onChange={(e) => setFormTitle(e.target.value)} className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500" /></div>
+                                        <div className="bg-slate-50 rounded-lg p-4 mb-6 border border-slate-100"><div className="flex justify-between text-sm mb-2"><span className="text-slate-600">선택된 문항</span><span className="font-bold text-indigo-600">{cart.length}개</span></div></div>
+                                        {!generatedLink ? (
+                                            <button onClick={handleGenerateForm} disabled={isGenerating} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg flex items-center justify-center shadow-md transition-all transform active:scale-95">{isGenerating ? "⏳ 생성 중..." : <><span className="mr-2"><Icons.FileSpreadsheet /></span>Google Form 생성</>}</button>
+                                        ) : (
+                                            <div className="bg-green-50 border border-green-200 rounded-lg p-4 animate-fade-in">
+                                                <div className="flex items-center text-green-700 font-bold mb-2"><span className="mr-1"><Icons.Check /></span>생성 완료!</div>
+                                                <div className="flex items-center bg-white border border-green-200 rounded px-2 py-2"><span className="mr-2 text-slate-400"><Icons.LinkIcon /></span><input readOnly value={generatedLink} className="text-xs w-full text-slate-600 bg-transparent outline-none truncate" /></div>
+                                                <button onClick={() => setGeneratedLink(null)} className="mt-3 w-full text-xs text-slate-500 hover:text-slate-800 underline">다시 만들기</button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    {showDbModal && (
+                        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+                            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full overflow-hidden">
+                                <div className="bg-indigo-600 px-6 py-4 flex justify-between items-center"><h3 className="text-white font-bold text-lg flex items-center"><span className="mr-2"><Icons.Database /></span>분석 결과 리포트</h3><span className="bg-indigo-500 text-white text-xs px-2 py-1 rounded-full">{analyzedData.length}개 분석됨</span></div>
+                                <div className="p-6 max-h-[60vh] overflow-y-auto bg-slate-50">
+                                    <p className="text-sm text-slate-600 mb-4"><strong className="text-indigo-600">{analyzedData.filter(d => d.status === 'new').length}개의 새로운 질문</strong>이 감지되었습니다.</p>
+                                    <div className="space-y-3">
+                                        {analyzedData.map((item) => (
+                                            <div key={item.id} className={`bg-white p-4 rounded-lg border shadow-sm flex gap-4 ${item.status === 'new' ? 'border-orange-300 ring-1 ring-orange-100' : 'border-slate-200'}`}>
+                                                <div className="flex-shrink-0 mt-1">
+                                                    {item.status === 'existing' && <span className="text-xs font-bold bg-slate-100 text-slate-500 px-2 py-1 rounded">기존</span>}
+                                                    {item.status === 'similar' && <span className="text-xs font-bold bg-yellow-100 text-yellow-700 px-2 py-1 rounded">유사</span>}
+                                                    {item.status === 'new' && <span className="text-xs font-bold bg-orange-100 text-orange-600 px-2 py-1 rounded">신규</span>}
+                                                </div>
+                                                <div className="flex-1 space-y-1">
+                                                    <div className="flex items-center text-xs text-slate-400"><span className="line-through mr-2">{item.original}</span><span className="mr-1"><Icons.ArrowRight /></span>Masking</div>
+                                                    <div className="text-slate-800 font-medium">{item.cleaned}</div>
+                                                    {item.status === 'new' && <div className="mt-2 flex items-center text-xs text-orange-600 bg-orange-50 p-2 rounded"><span className="mr-1"><Icons.AlertCircle /></span>DB 등록 필요<label className="flex items-center ml-auto cursor-pointer"><input type="checkbox" defaultChecked className="mr-1" />등록</label></div>}
+                                                    {item.status === 'similar' && <div className="mt-2 text-xs text-yellow-700 bg-yellow-50 p-2 rounded">{item.matchNote}</div>}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="p-4 border-t border-slate-200 bg-white flex justify-end space-x-3">
+                                    <button onClick={() => setShowDbModal(false)} className="px-4 py-2 text-slate-500 hover:text-slate-700 text-sm font-medium">취소</button>
+                                    <button onClick={handleSaveToDb} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium shadow-sm flex items-center"><span className="mr-2"><Icons.Save /></span>확인 및 DB 반영</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<SurveyApp />);
+    </script>
+</body>
+</html>
