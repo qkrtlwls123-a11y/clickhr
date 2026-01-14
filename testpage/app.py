@@ -1,7 +1,19 @@
+import sys
+from pathlib import Path
 import streamlit as st
 import pandas as pd
 import time
 from datetime import datetime
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+from etl import (  # noqa: E402
+    map_columns,
+    mask_entities,
+    split_raw_questions,
+    match_questions,
+    update_question_bank,
+)
 
 # --- 1. 페이지 및 스타일 설정 ---
 st.set_page_config(
@@ -62,6 +74,47 @@ if 'responses' not in st.session_state:
     st.session_state.responses = pd.DataFrame(
         columns=["survey_id", "respondent_id", "question_id", "answer_value"]
     )
+if 'question_bank' not in st.session_state:
+    st.session_state.question_bank = [
+        {
+            "question_id": "QB-001",
+            "question_text": "{{COURSE}} 과정의 난이도는 적절했나요?",
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "merged_count": 0,
+        },
+        {
+            "question_id": "QB-002",
+            "question_text": "{{INSTRUCTOR}} 강사의 전문성은 어떠했나요?",
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "merged_count": 0,
+        },
+        {
+            "question_id": "QB-003",
+            "question_text": "강의장은 쾌적했나요?",
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "merged_count": 0,
+        },
+        {
+            "question_id": "QB-004",
+            "question_text": "교육 내용은 실무에 도움이 되나요?",
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "merged_count": 0,
+        },
+        {
+            "question_id": "QB-005",
+            "question_text": "향후 추천할 의향이 있나요?",
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "merged_count": 0,
+        },
+        {
+            "question_id": "QB-006",
+            "question_text": "교육 시간 배분은 적절했나요?",
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "merged_count": 0,
+        },
+    ]
+if 'last_etl_results' not in st.session_state:
+    st.session_state.last_etl_results = []
 
 # --- 3. 사이드바 메뉴 ---
 with st.sidebar:
@@ -187,16 +240,26 @@ elif "2." in menu:
             )
             if uploaded_file is not None:
                 incoming = pd.read_csv(uploaded_file)
+                mapped = map_columns(incoming)
                 required_cols = {"survey_id", "respondent_id", "question_id", "answer_value"}
-                missing = required_cols.difference(incoming.columns)
+                missing = required_cols.difference(mapped.columns)
+                mapping_rows = [
+                    {
+                        "원본 컬럼": col,
+                        "표준 컬럼": mapped.columns[idx],
+                    }
+                    for idx, col in enumerate(incoming.columns)
+                ]
                 if missing:
                     st.error(f"필수 컬럼 누락: {', '.join(sorted(missing))}")
                 else:
                     st.session_state.responses = pd.concat(
-                        [st.session_state.responses, incoming],
+                        [st.session_state.responses, mapped],
                         ignore_index=True
                     )
                     st.success(f"{len(incoming)}건의 응답이 responses에 적재되었습니다.")
+                    with st.expander("표준 컬럼 매핑 결과", expanded=False):
+                        st.dataframe(pd.DataFrame(mapping_rows), use_container_width=True, hide_index=True)
 
             st.markdown("**Sheets 연결 (시뮬레이션)**")
             sheets_url = st.text_input("Google Sheets URL", placeholder="https://docs.google.com/spreadsheets/...")
@@ -264,23 +327,43 @@ Q2) 김철수 강사의 강의는 어땠나요?
     if analyze_btn:
         with st.spinner("AI가 문항을 분석하고 DB와 대조 중입니다..."):
             time.sleep(1.5)
+            raw_questions = split_raw_questions(raw_text)
+            masked_questions = [
+                mask_entities(q, course_name, instructor_name) for q in raw_questions
+            ]
+            match_results = match_questions(
+                masked_questions, st.session_state.question_bank
+            )
+            st.session_state.last_etl_results = [
+                {
+                    "status": item["status"],
+                    "orig": raw_questions[idx],
+                    "clean": masked_questions[idx],
+                    "note": (
+                        f"기존 문항 일치 (유사도 {item['score']:.2f})"
+                        if item["status"] == "existing"
+                        else f"유사 문항 발견 (유사도 {item['score']:.2f})"
+                        if item["status"] == "similar"
+                        else "DB에 없는 신규 문항 (등록 필요)"
+                    ),
+                    "match_text": item["match_text"],
+                    "match_id": item["match_id"],
+                    "score": item["score"],
+                }
+                for idx, item in enumerate(match_results)
+            ]
             st.session_state.analysis_result = True
-            
+
     if st.session_state.analysis_result:
         st.divider()
         st.subheader("🔍 분석 결과 리포트 (DB Match Simulation)")
         
-        # 분석 로직 시뮬레이션 데이터
-        results = [
-            {"status": "existing", "orig": "신임팀장과정 과정에 대해 만족하십니까?", "clean": "{{COURSE}} 과정에 대해 만족하십니까?", "note": "기존 문항 일치 (자동 병합)"},
-            {"status": "existing", "orig": "김철수 강사의 강의는 어땠나요?", "clean": "{{INSTRUCTOR}} 강사의 강의는 어땠나요?", "note": "기존 문항 일치 (자동 병합)"},
-            {"status": "similar", "orig": "강의 시간은 적절했나요?", "clean": "강의 시간은 적절했나요?", "note": "유사 문항 발견: '교육 시간 배분은 적절했나요?'"},
-            {"status": "new", "orig": "식사는 맛있었나요?", "clean": "식사는 맛있었나요?", "note": "DB에 없는 신규 문항 (등록 필요)"},
-        ]
+        results = st.session_state.last_etl_results
         
         # 결과 요약
         new_count = len([r for r in results if r['status'] == 'new'])
-        st.warning(f"총 4개 문항 중 {new_count}개의 새로운 문항이 감지되었습니다.")
+        total_count = len(results)
+        st.warning(f"총 {total_count}개 문항 중 {new_count}개의 새로운 문항이 감지되었습니다.")
 
         # 리스트 뷰 (React UI 스타일)
         for item in results:
@@ -304,7 +387,10 @@ Q2) 김철수 강사의 강의는 어땠나요?
                 <div style="flex-grow:1; margin-left:15px;">
                     <div style="font-size:12px; color:#94a3b8; text-decoration:line-through;">{item['orig']}</div>
                     <div style="font-size:15px; font-weight:600; color:#1e293b;">{item['clean']} <span style="font-size:12px; color:#4f46e5;">(Masking OK)</span></div>
-                    <div style="font-size:12px; color:#64748b; margin-top:4px;">{item['note']}</div>
+                    <div style="font-size:12px; color:#64748b; margin-top:4px;">
+                        {item['note']}
+                        {f"<br>매칭 문항: {item['match_text']}" if item['match_text'] else ""}
+                    </div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -312,8 +398,14 @@ Q2) 김철수 강사의 강의는 어땠나요?
         c1, c2 = st.columns([4, 1])
         with c2:
             if st.button("확인 및 DB 저장"):
+                updated_bank, save_summary = update_question_bank(
+                    st.session_state.question_bank, results
+                )
+                st.session_state.question_bank = updated_bank
                 st.balloons()
-                st.success("데이터베이스에 성공적으로 반영되었습니다.")
+                st.success(
+                    f"question_bank 업데이트 완료: 신규 {save_summary['new']}건, 병합 {save_summary['merged']}건"
+                )
                 st.session_state.analysis_result = None # 초기화
 
 # ==============================================================================
