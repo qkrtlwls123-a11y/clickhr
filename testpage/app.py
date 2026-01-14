@@ -12,20 +12,18 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 커스텀 CSS (기업용 대시보드 느낌 강화)
+# 기존 CSS 부분을 이걸로 교체하세요
 st.markdown("""
     <style>
-    /* 전체 배경 및 폰트 */
+    /* 전체 배경 */
     .main {background-color: #f8f9fa;}
-    h1, h2, h3 {font-family: 'Sans-serif'; color: #2c3e50;}
     
-    /* 카드 스타일 */
-    .metric-card {
-        background-color: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        border-left: 5px solid #4e73df;
+    /* 사이드바 배경 및 폰트 색상 강제 지정 */
+    section[data-testid="stSidebar"] {
+        background-color: #2c3e50;
+    }
+    section[data-testid="stSidebar"] * {
+        color: white !important; /* 모든 하위 요소 글자색 흰색 고정 */
     }
     
     /* 버튼 스타일 */
@@ -34,6 +32,8 @@ st.markdown("""
         font-weight: 600;
         height: 3em;
     }
+    </style>
+    """, unsafe_allow_html=True)
     
     /* 사이드바 스타일 */
     section[data-testid="stSidebar"] {
