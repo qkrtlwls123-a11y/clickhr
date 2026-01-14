@@ -3,7 +3,6 @@ import os
 from collections import Counter
 from urllib import request
 
-
 PROMPT_TEMPLATE = """
 다음은 직원 교육 만족도 설문에 대한 정성 코멘트입니다.
 핵심 감정(긍정/부정/중립) 분포와 핵심 키워드 5개를 한국어로 요약하세요.
@@ -28,6 +27,7 @@ def _fallback_summary(comments):
 
 
 def analyze_comments(comments, _key=None):
+    # [수정 1] API 키 공백 제거 (안전 장치)
     api_key = (_key or os.getenv("GEMINI_API_KEY", "")).strip()
 
     if not comments:
@@ -51,25 +51,28 @@ def analyze_comments(comments, _key=None):
         }
     ).encode("utf-8")
 
+    # [수정 2] URL 변수를 먼저 정의 (순서 중요!)
+    # 모델명은 가장 안정적인 최신 별칭인 'gemini-1.5-flash' 사용
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+
+    # [수정 3] URL 정의 후 디버깅 출력 (이제 에러가 나지 않습니다)
+    print(f"--- DEBUG ---")
+    print(f"API Key 길이: {len(api_key)}") 
+    print(f"요청 URL: {url}")
+    print(f"-------------")
 
     req = request.Request(
-        "https://generativelanguage.googleapis.com/v1beta/"
-        f"models/gemini-1.5-flash-001:generateContent?key={api_key}",
+        url,
         data=payload,
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    
-    # 디버깅용 출력 (실행 시 터미널 확인)
-    print(f"--- DEBUG ---")
-    print(f"API Key 길이: {len(api_key)}") # 키 길이가 이상하게 길면 공백이 있는 것
-    print(f"요청 URL: {url}")            # URL 중간에 끊김이 없는지 확인
-    print(f"-------------")
-    
+
     try:
         with request.urlopen(req, timeout=20) as response:
             response_data = json.loads(response.read().decode("utf-8"))
     except Exception as exc:
+        # 에러 발생 시 로그에 남기기 위해 메시지 상세화
         return {
             "status": "error",
             "message": f"Gemini 호출 실패: {exc}",
@@ -80,7 +83,7 @@ def analyze_comments(comments, _key=None):
     if not candidates:
         return {
             "status": "error",
-            "message": "Gemini 응답에 결과가 없습니다.",
+            "message": "Gemini 응답에 결과가 없습니다 (Safety Filter 등).",
             "result": None,
         }
 
