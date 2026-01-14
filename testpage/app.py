@@ -23,7 +23,7 @@ st.markdown("""
         background-color: #2c3e50;
     }
     section[data-testid="stSidebar"] * {
-        color: white !important; 
+        color: white !important; /* 모든 하위 요소 글자색 흰색 고정 */
     }
     
     /* 버튼 스타일 */
@@ -31,14 +31,6 @@ st.markdown("""
         border-radius: 8px;
         font-weight: 600;
         height: 3em;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    /* 사이드바 스타일 */
-    section[data-testid="stSidebar"] {
-        background-color: #2c3e50;
-        color: white;
     }
     </style>
     """, unsafe_allow_html=True)
