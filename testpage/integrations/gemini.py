@@ -55,7 +55,7 @@ def analyze_comments(comments, _key=None):
     payload = json.dumps(payload_dict).encode("utf-8")
 
     # 4. 모델 및 URL 설정 (가장 안정적인 1.5 Flash 사용)
-    model_name = "gemini-1.5-flash"
+    model_name = "gemini-2.0-flash"
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
 
     # 5. 헤더 설정 (API 키는 헤더에 넣는 것이 가장 안전함)
