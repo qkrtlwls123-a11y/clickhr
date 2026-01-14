@@ -62,7 +62,7 @@ def analyze_comments(comments, _key=None):
 
     for model_name in models_to_try:
         try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
             print(f"--- 시도 중: {model_name} ---") # 디버깅용
             
             response_data = _send_request(url, payload)
