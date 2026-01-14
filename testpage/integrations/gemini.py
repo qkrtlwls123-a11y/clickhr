@@ -29,7 +29,7 @@ def _fallback_summary(comments):
 
 def analyze_comments(comments, api_key=None):
     if api_key is None:
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = os.getenv("AIzaSyBzb-IYcwArz5Si5sU5VYaGXckSY9s6Y50")
 
     if not comments:
         return {
