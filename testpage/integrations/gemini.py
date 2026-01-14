@@ -54,8 +54,7 @@ def analyze_comments(comments, _key=None):
     ).encode("utf-8")
 
     req = request.Request(
-        "https://generativelanguage.googleapis.com/v1beta/models/"
-        f"gemini-1.5-flash:generateContent?key={api_key}",
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}",
         data=payload,
         headers={"Content-Type": "application/json"},
         method="POST",
