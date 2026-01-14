@@ -50,12 +50,7 @@ def analyze_comments(comments, _key=None):
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
         }
     ).encode("utf-8")
-    
-    # 디버깅용 출력 (실행 시 터미널 확인)
-    print(f"--- DEBUG ---")
-    print(f"API Key 길이: {len(api_key)}") # 키 길이가 이상하게 길면 공백이 있는 것
-    print(f"요청 URL: {url}")            # URL 중간에 끊김이 없는지 확인
-    print(f"-------------")
+
 
     req = request.Request(
         "https://generativelanguage.googleapis.com/v1beta/"
@@ -64,7 +59,13 @@ def analyze_comments(comments, _key=None):
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-
+    
+    # 디버깅용 출력 (실행 시 터미널 확인)
+    print(f"--- DEBUG ---")
+    print(f"API Key 길이: {len(api_key)}") # 키 길이가 이상하게 길면 공백이 있는 것
+    print(f"요청 URL: {url}")            # URL 중간에 끊김이 없는지 확인
+    print(f"-------------")
+    
     try:
         with request.urlopen(req, timeout=20) as response:
             response_data = json.loads(response.read().decode("utf-8"))
