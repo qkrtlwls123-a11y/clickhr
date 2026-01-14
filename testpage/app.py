@@ -23,7 +23,7 @@ st.markdown("""
         background-color: #2c3e50;
     }
     section[data-testid="stSidebar"] * {
-        color: white !important; /* 모든 하위 요소 글자색 흰색 고정 */
+        color: white !important; 
     }
     
     /* 버튼 스타일 */
