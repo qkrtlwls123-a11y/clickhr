@@ -53,7 +53,7 @@ def analyze_comments(comments, _key=None):
 
     req = request.Request(
         "https://generativelanguage.googleapis.com/v1beta/"
-        f"models/gemini-1.5-flash:generateContent?key={api_key}",
+        f"models/gemini-1.5-flash-001:generateContent?key={api_key}",
         data=payload,
         headers={"Content-Type": "application/json"},
         method="POST",
