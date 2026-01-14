@@ -28,7 +28,7 @@ def _fallback_summary(comments):
 
 
 def analyze_comments(comments, _key=None):
-    api_key = _key or os.getenv("GEMINI_API_KEY")
+    api_key = (_key or os.getenv("GEMINI_API_KEY", "")).strip()
 
     if not comments:
         return {
