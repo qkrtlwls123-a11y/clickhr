@@ -1,6 +1,7 @@
 import io
 import streamlit as st
 import pandas as pd
+import re
 import time
 from datetime import datetime
 
@@ -59,6 +60,8 @@ st.markdown("""
 # --- 2. 세션 스테이트 초기화 ---
 if 'analysis_result' not in st.session_state:
     st.session_state.analysis_result = None
+if 'analysis_payload' not in st.session_state:
+    st.session_state.analysis_payload = []
 if 'survey_info' not in st.session_state:
     st.session_state.survey_info = []
 if 'responses' not in st.session_state:
@@ -67,6 +70,102 @@ if 'responses' not in st.session_state:
     )
 if 'gemini_result' not in st.session_state:
     st.session_state.gemini_result = None
+if 'question_bank' not in st.session_state:
+    st.session_state.question_bank = [
+        {"id": "L-001", "text": "{{COURSE}} 과정에 대해 만족하십니까?"},
+        {"id": "L-002", "text": "{{INSTRUCTOR}} 강사의 강의는 어땠나요?"},
+        {"id": "L-003", "text": "강의 시간은 적절했나요?"},
+        {"id": "L-004", "text": "교육 시간 배분은 적절했나요?"},
+    ]
+
+
+def normalize_text(text: str) -> str:
+    text = re.sub(r"\d+", " ", text)
+    text = re.sub(r"[^\w\s가-힣]", " ", text)
+    text = text.replace("_", " ")
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def mask_variables(text: str, course: str, instructor: str) -> str:
+    masked = text
+    if course:
+        masked = re.sub(re.escape(course), "{{COURSE}}", masked)
+    if instructor:
+        masked = re.sub(re.escape(instructor), "{{INSTRUCTOR}}", masked)
+    return masked
+
+
+def levenshtein_distance(a: str, b: str) -> int:
+    if a == b:
+        return 0
+    if not a:
+        return len(b)
+    if not b:
+        return len(a)
+
+    prev_row = list(range(len(b) + 1))
+    for i, char_a in enumerate(a, start=1):
+        curr_row = [i]
+        for j, char_b in enumerate(b, start=1):
+            insertions = prev_row[j] + 1
+            deletions = curr_row[j - 1] + 1
+            substitutions = prev_row[j - 1] + (char_a != char_b)
+            curr_row.append(min(insertions, deletions, substitutions))
+        prev_row = curr_row
+    return prev_row[-1]
+
+
+def similarity_ratio(a: str, b: str) -> float:
+    if not a and not b:
+        return 1.0
+    distance = levenshtein_distance(a, b)
+    max_len = max(len(a), len(b))
+    return 1 - (distance / max_len) if max_len else 0.0
+
+
+def find_question_match(cleaned: str, question_bank: list[dict]) -> dict:
+    best_match = None
+    best_score = 0.0
+    for question in question_bank:
+        normalized_question = normalize_text(question["text"])
+        score = similarity_ratio(cleaned, normalized_question)
+        if score > best_score:
+            best_score = score
+            best_match = question
+    return {"match": best_match, "score": best_score}
+
+
+def analyze_questions(raw_text: str, course: str, instructor: str, question_bank: list[dict]) -> list[dict]:
+    lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
+    results = []
+    for line in lines:
+        normalized = normalize_text(line)
+        masked = mask_variables(normalized, course, instructor)
+        match_info = find_question_match(masked, question_bank)
+        match = match_info["match"]
+        score = match_info["score"]
+
+        if match and score >= 0.95:
+            status = "existing"
+            note = "기존 문항 일치 (자동 병합)"
+        elif match and score >= 0.8:
+            status = "similar"
+            note = f"유사 문항 발견: '{match['text']}'"
+        else:
+            status = "new"
+            note = "DB에 없는 신규 문항 (등록 필요)"
+
+        results.append(
+            {
+                "status": status,
+                "orig": line,
+                "clean": masked,
+                "note": note,
+                "match_id": match["id"] if match else None,
+                "score": score,
+            }
+        )
+    return results
 
 # --- 3. 사이드바 메뉴 ---
 with st.sidebar:
@@ -277,23 +376,23 @@ Q2) 김철수 강사의 강의는 어땠나요?
     if analyze_btn:
         with st.spinner("AI가 문항을 분석하고 DB와 대조 중입니다..."):
             time.sleep(1.5)
+            st.session_state.analysis_payload = analyze_questions(
+                raw_text=raw_text,
+                course=course_name,
+                instructor=instructor_name,
+                question_bank=st.session_state.question_bank,
+            )
             st.session_state.analysis_result = True
             
     if st.session_state.analysis_result:
         st.divider()
         st.subheader("🔍 분석 결과 리포트 (DB Match Simulation)")
         
-        # 분석 로직 시뮬레이션 데이터
-        results = [
-            {"status": "existing", "orig": "신임팀장과정 과정에 대해 만족하십니까?", "clean": "{{COURSE}} 과정에 대해 만족하십니까?", "note": "기존 문항 일치 (자동 병합)"},
-            {"status": "existing", "orig": "김철수 강사의 강의는 어땠나요?", "clean": "{{INSTRUCTOR}} 강사의 강의는 어땠나요?", "note": "기존 문항 일치 (자동 병합)"},
-            {"status": "similar", "orig": "강의 시간은 적절했나요?", "clean": "강의 시간은 적절했나요?", "note": "유사 문항 발견: '교육 시간 배분은 적절했나요?'"},
-            {"status": "new", "orig": "식사는 맛있었나요?", "clean": "식사는 맛있었나요?", "note": "DB에 없는 신규 문항 (등록 필요)"},
-        ]
+        results = st.session_state.analysis_payload
         
         # 결과 요약
         new_count = len([r for r in results if r['status'] == 'new'])
-        st.warning(f"총 4개 문항 중 {new_count}개의 새로운 문항이 감지되었습니다.")
+        st.warning(f"총 {len(results)}개 문항 중 {new_count}개의 새로운 문항이 감지되었습니다.")
 
         # 리스트 뷰 (React UI 스타일)
         for item in results:
@@ -325,6 +424,16 @@ Q2) 김철수 강사의 강의는 어땠나요?
         c1, c2 = st.columns([4, 1])
         with c2:
             if st.button("확인 및 DB 저장"):
+                new_questions = [r for r in results if r["status"] == "new"]
+                if new_questions:
+                    next_index = len(st.session_state.question_bank) + 1
+                    for offset, item in enumerate(new_questions):
+                        st.session_state.question_bank.append(
+                            {
+                                "id": f"NEW-{next_index + offset:03d}",
+                                "text": item["clean"],
+                            }
+                        )
                 st.balloons()
                 st.success("데이터베이스에 성공적으로 반영되었습니다.")
                 st.session_state.analysis_result = None # 초기화
