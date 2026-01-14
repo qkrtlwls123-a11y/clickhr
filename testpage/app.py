@@ -56,6 +56,12 @@ st.markdown("""
 # --- 2. 세션 스테이트 초기화 ---
 if 'analysis_result' not in st.session_state:
     st.session_state.analysis_result = None
+if 'survey_info' not in st.session_state:
+    st.session_state.survey_info = []
+if 'responses' not in st.session_state:
+    st.session_state.responses = pd.DataFrame(
+        columns=["survey_id", "respondent_id", "question_id", "answer_value"]
+    )
 
 # --- 3. 사이드바 메뉴 ---
 with st.sidebar:
@@ -90,6 +96,7 @@ st.divider()
 # ==============================================================================
 if "1." in menu:
     col1, col2 = st.columns([2, 1])
+    survey_meta_container = st.container()
     
     with col1:
         st.subheader("📚 표준 문항 라이브러리")
@@ -135,8 +142,23 @@ if "1." in menu:
             if st.button("🚀 Google Form 생성", type="primary", disabled=(count==0)):
                 with st.spinner("Google API 연동 중..."):
                     time.sleep(1.5)
+                survey_id = f"SUR-{datetime.now().strftime('%Y%m%d%H%M%S')}-{count}"
+                st.session_state.survey_info.append({
+                    "survey_id": survey_id,
+                    "title": form_title,
+                    "question_count": count,
+                    "created_at": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                })
                 st.toast("설문지가 생성되었습니다!", icon="✅")
                 st.success(f"[링크 생성 완료]\n\nforms.google.com/v/simulation_1234")
+                st.success(f"발급된 설문 ID: {survey_id}")
+
+    with survey_meta_container:
+        st.subheader("🗂️ 설문 메타데이터 저장소 (survey_info)")
+        if st.session_state.survey_info:
+            st.dataframe(pd.DataFrame(st.session_state.survey_info), use_container_width=True, hide_index=True)
+        else:
+            st.caption("아직 생성된 설문이 없습니다. 설문을 생성하면 메타데이터가 저장됩니다.")
 
 # ==============================================================================
 # [MODULE 2] 데이터 수집/표준화 (React UI 로직 이식)
@@ -149,6 +171,60 @@ elif "2." in menu:
     with col_input:
         st.markdown("### 1. 데이터 입력 및 설정")
         with st.container(border=True):
+            st.markdown("#### 🔄 응답 데이터 적재 (responses)")
+            if st.session_state.survey_info:
+                survey_id_options = [s["survey_id"] for s in st.session_state.survey_info]
+                selected_survey_id = st.selectbox("survey_id 선택", survey_id_options)
+            else:
+                selected_survey_id = None
+                st.warning("먼저 Module 1에서 설문을 생성해 survey_id를 발급하세요.")
+
+            st.markdown("**파일 업로드 (CSV)**")
+            uploaded_file = st.file_uploader(
+                "CSV 업로드",
+                type=["csv"],
+                help="필수 컬럼: survey_id, respondent_id, question_id, answer_value"
+            )
+            if uploaded_file is not None:
+                incoming = pd.read_csv(uploaded_file)
+                required_cols = {"survey_id", "respondent_id", "question_id", "answer_value"}
+                missing = required_cols.difference(incoming.columns)
+                if missing:
+                    st.error(f"필수 컬럼 누락: {', '.join(sorted(missing))}")
+                else:
+                    st.session_state.responses = pd.concat(
+                        [st.session_state.responses, incoming],
+                        ignore_index=True
+                    )
+                    st.success(f"{len(incoming)}건의 응답이 responses에 적재되었습니다.")
+
+            st.markdown("**Sheets 연결 (시뮬레이션)**")
+            sheets_url = st.text_input("Google Sheets URL", placeholder="https://docs.google.com/spreadsheets/...")
+            if st.button("Sheets 연결 및 적재", disabled=(selected_survey_id is None)):
+                simulated = pd.DataFrame([
+                    {
+                        "survey_id": selected_survey_id,
+                        "respondent_id": "R-001",
+                        "question_id": "L-001",
+                        "answer_value": 5
+                    },
+                    {
+                        "survey_id": selected_survey_id,
+                        "respondent_id": "R-002",
+                        "question_id": "L-002",
+                        "answer_value": 4
+                    }
+                ])
+                st.session_state.responses = pd.concat(
+                    [st.session_state.responses, simulated],
+                    ignore_index=True
+                )
+                st.success("Sheets 연결 완료: 2건의 샘플 응답이 적재되었습니다.")
+
+            if not st.session_state.responses.empty:
+                st.markdown("**현재 responses 데이터**")
+                st.dataframe(st.session_state.responses, use_container_width=True, hide_index=True)
+
             # React 앱의 변수 설정 부분 반영
             c1, c2 = st.columns(2)
             with c1:
@@ -244,12 +320,33 @@ Q2) 김철수 강사의 강의는 어땠나요?
 # [MODULE 3] AI 분석
 # ==============================================================================
 elif "3." in menu:
+    if st.session_state.survey_info:
+        survey_id_options = [s["survey_id"] for s in st.session_state.survey_info]
+        selected_survey_id = st.selectbox("분석 대상 survey_id 선택", survey_id_options)
+    else:
+        selected_survey_id = None
+        st.warning("설문 메타데이터가 없습니다. Module 1에서 설문을 생성하세요.")
+
+    if selected_survey_id:
+        filtered_responses = st.session_state.responses[
+            st.session_state.responses["survey_id"] == selected_survey_id
+        ]
+    else:
+        filtered_responses = st.session_state.responses.iloc[0:0]
+
     tab_quant, tab_qual = st.tabs(["📊 정량 데이터 분석", "💬 정성 데이터(AI) 분석"])
     
     with tab_quant:
+        st.caption(f"응답 데이터 필터: survey_id = {selected_survey_id}")
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("총 응답자", "1,240명", "+12%")
-        m2.metric("평균 만족도", "4.5 / 5.0", "+0.2")
+        respondent_count = filtered_responses["respondent_id"].nunique()
+        avg_score = (
+            filtered_responses["answer_value"].astype(float).mean()
+            if not filtered_responses.empty
+            else 0
+        )
+        m1.metric("총 응답자", f"{respondent_count}명", "+12%")
+        m2.metric("평균 만족도", f"{avg_score:.1f} / 5.0", "+0.2")
         m3.metric("NPS", "72점", "Excellent")
         m4.metric("응답률", "94%", "+2%")
         
