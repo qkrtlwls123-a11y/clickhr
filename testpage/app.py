@@ -1,7 +1,10 @@
+import io
 import streamlit as st
 import pandas as pd
 import time
 from datetime import datetime
+
+from integrations import gemini, google_forms, reporting
 
 # --- 1. 페이지 및 스타일 설정 ---
 st.set_page_config(
@@ -62,6 +65,8 @@ if 'responses' not in st.session_state:
     st.session_state.responses = pd.DataFrame(
         columns=["survey_id", "respondent_id", "question_id", "answer_value"]
     )
+if 'gemini_result' not in st.session_state:
+    st.session_state.gemini_result = None
 
 # --- 3. 사이드바 메뉴 ---
 with st.sidebar:
@@ -141,16 +146,24 @@ if "1." in menu:
             
             if st.button("🚀 Google Form 생성", type="primary", disabled=(count==0)):
                 with st.spinner("Google API 연동 중..."):
-                    time.sleep(1.5)
-                survey_id = f"SUR-{datetime.now().strftime('%Y%m%d%H%M%S')}-{count}"
+                    questions = selected_rows["문항"].tolist()
+                    form_result = google_forms.create_google_form(form_title, questions)
+                survey_id = form_result.get("form_id") or f"SUR-{datetime.now().strftime('%Y%m%d%H%M%S')}-{count}"
                 st.session_state.survey_info.append({
                     "survey_id": survey_id,
                     "title": form_title,
                     "question_count": count,
-                    "created_at": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    "created_at": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    "form_url": form_result.get("form_url"),
+                    "status": form_result.get("status")
                 })
                 st.toast("설문지가 생성되었습니다!", icon="✅")
-                st.success(f"[링크 생성 완료]\n\nforms.google.com/v/simulation_1234")
+                if form_result.get("form_url"):
+                    st.success(f"[링크 생성 완료]\n\n{form_result['form_url']}")
+                else:
+                    st.warning("폼 링크를 가져오지 못했습니다. 상태를 확인하세요.")
+                if form_result.get("message"):
+                    st.caption(form_result["message"])
                 st.success(f"발급된 설문 ID: {survey_id}")
 
     with survey_meta_container:
@@ -363,16 +376,59 @@ elif "3." in menu:
         
         col_chat, col_result = st.columns([1, 2])
         with col_chat:
-            with st.chat_message("user"):
-                st.write("이번 과정 피드백 요약해줘.")
-            with st.chat_message("ai", avatar="🤖"):
-                st.write("152건 분석 완료. 주요 이슈는 #실무적용과 #시간부족입니다.")
+            st.markdown("**정성 코멘트 입력**")
+            comment_upload = st.file_uploader("텍스트/CSV 업로드", type=["txt", "csv"])
+            raw_comments = st.text_area(
+                "코멘트 직접 입력",
+                height=200,
+                value=(
+                    "현업 적용성이 높아서 좋았습니다.\n"
+                    "시간이 조금 더 있었으면 합니다.\n"
+                    "강사의 사례가 풍부해서 도움이 되었어요."
+                )
+            )
+            if st.button("Gemini 분석 실행", type="primary"):
+                comments = []
+                if comment_upload is not None:
+                    content = comment_upload.read().decode("utf-8")
+                    if comment_upload.name.endswith(".csv"):
+                        csv_df = pd.read_csv(io.StringIO(content))
+                        if "comment" in csv_df.columns:
+                            comments.extend(csv_df["comment"].dropna().astype(str).tolist())
+                        else:
+                            comments.extend(content.splitlines())
+                    else:
+                        comments.extend(content.splitlines())
+
+                comments.extend([line for line in raw_comments.splitlines() if line.strip()])
+                analysis = gemini.analyze_comments(comments)
+                st.session_state.gemini_result = analysis
+                if analysis["status"] in {"success", "simulated"}:
+                    st.toast("Gemini 분석 완료", icon="✅")
+                else:
+                    st.error(analysis["message"])
         
         with col_result:
-            with st.expander("1. 긍정 피드백 (Positive)", expanded=True):
-                st.write("👍 현업 적용성: 당장 쓸 수 있는 툴 제공 (45건)")
-            with st.expander("2. 개선 요청 (Negative)", expanded=True):
-                st.write("👎 시간 부족: 실습 시간 확대 요망 (20건)")
+            if st.session_state.gemini_result:
+                result_payload = st.session_state.gemini_result
+                result = result_payload.get("result")
+                if result:
+                    with st.expander("1. 감정 요약", expanded=True):
+                        st.write(f"감정 분류: {result.get('sentiment', '-')}")
+                        st.caption(result_payload.get("message"))
+                    with st.expander("2. 키워드", expanded=True):
+                        keywords = result.get("keywords", [])
+                        if keywords:
+                            st.write(", ".join(keywords))
+                        else:
+                            st.write("키워드가 없습니다.")
+                    with st.expander("3. 요약", expanded=True):
+                        st.write(result.get("summary"))
+                else:
+                    st.warning("분석 결과가 없습니다.")
+            else:
+                with st.expander("예시 요약", expanded=True):
+                    st.write("분석을 실행하면 Gemini 결과가 표시됩니다.")
 
 # ==============================================================================
 # [MODULE 4] 리포트 센터
@@ -383,14 +439,42 @@ elif "4." in menu:
     with col_opt:
         st.subheader("⚙️ 보고서 설정")
         with st.container(border=True):
-            st.selectbox("프로젝트", ["2026 신임팀장 과정", "2025 전사 조직진단"])
-            st.radio("포맷", ["PDF (상세)", "PPT (발표)", "Excel"])
-            st.checkbox("AI 요약 포함", value=True)
+            project = st.selectbox("프로젝트", ["2026 신임팀장 과정", "2025 전사 조직진단"])
+            report_format = st.radio("포맷", ["PPT (발표)"])
+            include_ai = st.checkbox("AI 요약 포함", value=True)
+            summary_input = st.text_area(
+                "요약 문장",
+                value=(
+                    "종합 만족도는 4.5점으로 상승했습니다.\n"
+                    "신임팀장 과정의 실무 연계성이 높게 평가되었습니다."
+                ),
+                height=120,
+            )
+            highlight_input = st.text_area(
+                "하이라이트",
+                value=(
+                    "강의 콘텐츠: 실습 비중 확대 요청\n"
+                    "운영 지원: 사전 안내 개선 필요"
+                ),
+                height=100,
+            )
             
-            if st.button("다운로드", type="primary"):
-                with st.spinner("생성 중..."):
-                    time.sleep(1)
-                st.success("다운로드 완료!")
+            if st.button("PPT 생성", type="primary"):
+                with st.spinner("PPT 렌더링 중..."):
+                    summary_lines = [line for line in summary_input.splitlines() if line.strip()]
+                    highlight_lines = [line for line in highlight_input.splitlines() if line.strip()]
+                    pptx_bytes = reporting.build_pptx_report(
+                        title=project,
+                        summary_lines=summary_lines,
+                        highlights=highlight_lines,
+                    )
+                st.success("PPT 생성 완료")
+                st.download_button(
+                    label="PPT 다운로드",
+                    data=pptx_bytes,
+                    file_name=f"{project}_report.pptx",
+                    mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                )
     
     with col_preview:
         st.subheader("📄 미리보기")
