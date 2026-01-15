@@ -51,7 +51,7 @@ def analyze_comments(comments, _key=None):
         }
 
     # 2. 요청 데이터 구성
-    prompt = PROMPT_TEMPLATE.format(comments="/n".join(comments))
+    prompt = PROMPT_TEMPLATE.format(comments="\n".join(comments))
     
     # [수정] generationConfig 추가 (JSON 응답 강제)
     payload_dict = {
