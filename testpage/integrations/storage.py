@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import tempfile
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol
@@ -275,18 +276,26 @@ def build_storage_config() -> StorageConfig:
     )
 
 
+def get_local_store_path() -> str:
+    configured = os.getenv("CLICKHR_LOCAL_STORE")
+    if configured:
+        return os.path.expanduser(configured)
+    return os.path.join(tempfile.gettempdir(), "clickhr_store")
+
+
 def get_storage() -> StorageBackend:
     config = build_storage_config()
     backend = config.backend.lower()
+    local_store_path = get_local_store_path()
     if backend == "bigquery":
         if config.bigquery_project and config.bigquery_dataset:
             return BigQueryStore(config)
-        return LocalCSVStore(base_path=os.getenv("CLICKHR_LOCAL_STORE", "/workspace/clickhr/testpage/.store"))
+        return LocalCSVStore(base_path=local_store_path)
     if backend == "sheets":
         if config.sheet_id and (config.credentials_json or config.credentials_path):
             return GoogleSheetsStore(config)
-        return LocalCSVStore(base_path=os.getenv("CLICKHR_LOCAL_STORE", "/workspace/clickhr/testpage/.store"))
-    return LocalCSVStore(base_path=os.getenv("CLICKHR_LOCAL_STORE", "/workspace/clickhr/testpage/.store"))
+        return LocalCSVStore(base_path=local_store_path)
+    return LocalCSVStore(base_path=local_store_path)
 
 
 def standardize_question_bank(df: pd.DataFrame) -> pd.DataFrame:
