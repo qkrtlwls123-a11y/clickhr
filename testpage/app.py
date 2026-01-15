@@ -1,4 +1,7 @@
 import io
+import json
+import os
+import hashlib
 import streamlit as st
 import pandas as pd
 import re
@@ -72,6 +75,63 @@ if "responses_df" not in st.session_state:
     st.session_state.responses_df = st.session_state.storage_client.load_responses()
 if 'gemini_result' not in st.session_state:
     st.session_state.gemini_result = None
+if "gemini_cache" not in st.session_state:
+    st.session_state.gemini_cache = {}
+
+
+def get_gemini_cache_path() -> str:
+    base_path = storage.get_local_store_path()
+    os.makedirs(base_path, exist_ok=True)
+    return os.path.join(base_path, "gemini_cache.json")
+
+
+def load_gemini_cache() -> dict:
+    path = get_gemini_cache_path()
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            return json.load(handle)
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def save_gemini_cache(cache: dict) -> None:
+    path = get_gemini_cache_path()
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(cache, handle, ensure_ascii=False, indent=2)
+
+
+def ensure_gemini_cache_loaded() -> None:
+    if not st.session_state.gemini_cache:
+        st.session_state.gemini_cache = load_gemini_cache()
+
+
+def build_comment_cache_key(comments: list[str], context_key: str) -> str:
+    normalized = "\n".join([comment.strip() for comment in comments if comment.strip()])
+    digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+    return f"{context_key}:{digest}"
+
+
+def analyze_comments_cached(comments: list[str], context_key: str) -> dict:
+    ensure_gemini_cache_loaded()
+    cache_key = build_comment_cache_key(comments, context_key)
+    cached = st.session_state.gemini_cache.get(cache_key)
+    if cached:
+        return {
+            "status": "cached",
+            "message": "저장된 분석 결과를 재사용합니다.",
+            "result": cached.get("result"),
+        }
+    analysis = gemini.analyze_comments(comments)
+    if analysis.get("result"):
+        st.session_state.gemini_cache[cache_key] = {
+            "saved_at": storage.utc_now(),
+            "comment_count": len(comments),
+            "result": analysis["result"],
+        }
+        save_gemini_cache(st.session_state.gemini_cache)
+    return analysis
 def refresh_storage_cache() -> None:
     st.session_state.question_bank_df = st.session_state.storage_client.load_question_bank()
     st.session_state.survey_info_df = st.session_state.storage_client.load_survey_info()
@@ -176,6 +236,99 @@ def analyze_questions(raw_text: str, course: str, instructor: str, question_bank
         )
     return results
 
+
+def resolve_group_column(df: pd.DataFrame, candidates: list[str]) -> str | None:
+    for column in candidates:
+        if column in df.columns:
+            return column
+    return None
+
+
+def coerce_numeric(series: pd.Series) -> pd.Series:
+    return pd.to_numeric(series, errors="coerce")
+
+
+def derive_metrics(responses: pd.DataFrame, question_bank: pd.DataFrame, group_label: str) -> tuple[pd.DataFrame, dict]:
+    if responses.empty:
+        return (
+            pd.DataFrame(columns=[group_label, "만족도", "NPS"]),
+            {"respondents": 0, "avg_score": 0.0, "nps": None},
+        )
+
+    enriched = responses.copy()
+    if not question_bank.empty:
+        enriched = enriched.merge(
+            question_bank[["question_id", "category"]],
+            on="question_id",
+            how="left",
+        )
+    enriched["answer_numeric"] = coerce_numeric(enriched["answer_value"])
+
+    nps_question_ids = []
+    if "category" in enriched.columns:
+        nps_question_ids = (
+            question_bank.loc[question_bank["category"].fillna("").str.contains("NPS", case=False), "question_id"]
+            .dropna()
+            .tolist()
+        )
+
+    def compute_group(group: pd.DataFrame) -> pd.Series:
+        numeric_answers = group["answer_numeric"].dropna()
+        non_nps = group if not nps_question_ids else group[~group["question_id"].isin(nps_question_ids)]
+        satisfaction = coerce_numeric(non_nps["answer_value"]).dropna().mean()
+        nps_group = group[group["question_id"].isin(nps_question_ids)] if nps_question_ids else group.iloc[0:0]
+        nps_score = None
+        if not nps_group.empty:
+            nps_scores = coerce_numeric(nps_group["answer_value"]).dropna()
+            if not nps_scores.empty:
+                promoters = (nps_scores >= 9).sum()
+                detractors = (nps_scores <= 6).sum()
+                total = len(nps_scores)
+                nps_score = round(((promoters / total) - (detractors / total)) * 100, 1)
+        return pd.Series(
+            {
+                "만족도": round(satisfaction, 2) if pd.notna(satisfaction) else None,
+                "NPS": nps_score,
+                "응답수": numeric_answers.count(),
+            }
+        )
+
+    grouped = enriched.groupby(group_label, dropna=False).apply(compute_group).reset_index()
+
+    overall_satisfaction = coerce_numeric(enriched["answer_value"]).dropna().mean()
+    overall_nps = None
+    if nps_question_ids:
+        nps_all = enriched[enriched["question_id"].isin(nps_question_ids)]
+        if not nps_all.empty:
+            nps_scores = coerce_numeric(nps_all["answer_value"]).dropna()
+            if not nps_scores.empty:
+                promoters = (nps_scores >= 9).sum()
+                detractors = (nps_scores <= 6).sum()
+                total = len(nps_scores)
+                overall_nps = round(((promoters / total) - (detractors / total)) * 100, 1)
+
+    summary = {
+        "respondents": responses["respondent_id"].nunique(),
+        "avg_score": round(overall_satisfaction, 2) if pd.notna(overall_satisfaction) else 0.0,
+        "nps": overall_nps,
+    }
+    return grouped, summary
+
+
+def build_group_label(responses: pd.DataFrame, fallback_label: str, candidates: list[str]) -> str:
+    column = resolve_group_column(responses, candidates)
+    if column:
+        return column
+    responses[fallback_label] = "전체"
+    return fallback_label
+
+
+def extract_text_comments(responses: pd.DataFrame) -> list[str]:
+    if responses.empty:
+        return []
+    numeric = coerce_numeric(responses["answer_value"])
+    text_values = responses.loc[numeric.isna(), "answer_value"].dropna().astype(str)
+    return [value.strip() for value in text_values if value.strip()]
 # --- 3. 사이드바 메뉴 ---
 with st.sidebar:
     st.markdown("## 💠 Click Insight Hub")
@@ -502,24 +655,56 @@ elif "3." in menu:
     with tab_quant:
         st.caption(f"응답 데이터 필터: survey_id = {selected_survey_id}")
         m1, m2, m3, m4 = st.columns(4)
-        respondent_count = filtered_responses["respondent_id"].nunique()
-        avg_score = (
-            filtered_responses["answer_value"].astype(float).mean()
-            if not filtered_responses.empty
-            else 0
+        responses_for_metrics = filtered_responses.copy()
+        course_label = build_group_label(
+            responses_for_metrics,
+            "과정",
+            ["course_name", "course", "과정", "과정명"],
         )
-        m1.metric("총 응답자", f"{respondent_count}명", "+12%")
-        m2.metric("평균 만족도", f"{avg_score:.1f} / 5.0", "+0.2")
-        m3.metric("NPS", "72점", "Excellent")
-        m4.metric("응답률", "94%", "+2%")
+        instructor_label = build_group_label(
+            responses_for_metrics,
+            "강사",
+            ["instructor_name", "instructor", "강사", "강사명"],
+        )
+        session_label = build_group_label(
+            responses_for_metrics,
+            "차수",
+            ["session", "cohort", "round", "차수", "기수"],
+        )
+        course_metrics, summary = derive_metrics(
+            responses_for_metrics, st.session_state.question_bank_df, course_label
+        )
+        instructor_metrics, _ = derive_metrics(
+            responses_for_metrics, st.session_state.question_bank_df, instructor_label
+        )
+        session_metrics, _ = derive_metrics(
+            responses_for_metrics, st.session_state.question_bank_df, session_label
+        )
+        avg_score = summary["avg_score"]
+        nps_value = summary["nps"]
+        m1.metric("총 응답자", f"{summary['respondents']}명")
+        m2.metric("평균 만족도", f"{avg_score:.1f} / 5.0" if summary["respondents"] else "0.0 / 5.0")
+        m3.metric("NPS", f"{nps_value:.1f}점" if nps_value is not None else "N/A")
+        m4.metric("응답 건수", f"{len(filtered_responses)}건")
         
-        st.markdown("##### 📌 과정별 만족도 비교")
-        chart_data = pd.DataFrame({
-            "과정명": ["신임팀장", "승진자", "핵심가치", "DT교육"],
-            "만족도": [4.8, 4.2, 4.5, 3.9],
-            "목표치": [4.5, 4.5, 4.5, 4.5]
-        })
-        st.bar_chart(chart_data, x="과정명", y=["만족도", "목표치"], color=["#4e73df", "#eaecf4"])
+        st.markdown("##### 📌 과정/강사/차수별 만족도 비교")
+        group_choice = st.selectbox(
+            "분석 기준",
+            ["과정별", "강사별", "차수별"],
+            horizontal=True,
+        )
+        if group_choice == "강사별":
+            group_metrics = instructor_metrics
+            group_label = instructor_label
+        elif group_choice == "차수별":
+            group_metrics = session_metrics
+            group_label = session_label
+        else:
+            group_metrics = course_metrics
+            group_label = course_label
+        chart_data = group_metrics[[group_label, "만족도"]].copy()
+        chart_data["목표치"] = 4.5
+        st.bar_chart(chart_data, x=group_label, y=["만족도", "목표치"], color=["#4e73df", "#eaecf4"])
 
     with tab_qual:
         st.info("🤖 Gemini AI Analysis: 수백 개의 주관식 코멘트를 읽고 핵심 키워드를 추출합니다.")
@@ -528,6 +713,12 @@ elif "3." in menu:
         with col_chat:
             st.markdown("**정성 코멘트 입력**")
             comment_upload = st.file_uploader("텍스트/CSV 업로드", type=["txt", "csv"])
+            response_comments = extract_text_comments(filtered_responses)
+            include_responses = st.checkbox(
+                "responses에서 주관식 코멘트 사용",
+                value=bool(response_comments),
+                help=f"현재 {len(response_comments)}개의 주관식 응답을 감지했습니다.",
+            )
             raw_comments = st.text_area(
                 "코멘트 직접 입력",
                 height=200,
@@ -539,6 +730,8 @@ elif "3." in menu:
             )
             if st.button("Gemini 분석 실행", type="primary"):
                 comments = []
+                if include_responses:
+                    comments.extend(response_comments)
                 if comment_upload is not None:
                     content = comment_upload.read().decode("utf-8")
                     if comment_upload.name.endswith(".csv"):
@@ -551,10 +744,13 @@ elif "3." in menu:
                         comments.extend(content.splitlines())
 
                 comments.extend([line for line in raw_comments.splitlines() if line.strip()])
-                analysis = gemini.analyze_comments(comments)
+                if not comments:
+                    st.warning("분석할 코멘트가 없습니다.")
+                    st.stop()
+                analysis = analyze_comments_cached(comments, selected_survey_id or "global")
                 st.session_state.gemini_result = analysis
-                if analysis["status"] in {"success", "simulated"}:
-                    st.toast("Gemini 분석 완료", icon="✅")
+                if analysis["status"] in {"success", "simulated", "cached"}:
+                    st.toast(analysis.get("message", "Gemini 분석 완료"), icon="✅")
                 else:
                     st.error(analysis["message"])
         
@@ -574,6 +770,11 @@ elif "3." in menu:
                             st.write("키워드가 없습니다.")
                     with st.expander("3. 요약", expanded=True):
                         st.write(result.get("summary"))
+                    st.chat_message("assistant").write(
+                        f"요약: {result.get('summary', '')}\n\n"
+                        f"핵심 감정: {result.get('sentiment', '-')}\n"
+                        f"키워드: {', '.join(result.get('keywords', []))}"
+                    )
                 else:
                     st.warning("분석 결과가 없습니다.")
             else:
