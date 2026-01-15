@@ -342,7 +342,7 @@ elif "2." in menu:
                     standardized = storage.standardize_responses(incoming)
                     st.session_state.storage_client.append_responses(standardized)
                     refresh_storage_cache()
-                    st.success(f\"{len(incoming)}건의 응답이 responses에 적재되었습니다.\")
+                    st.success(f"{len(incoming)}건의 응답이 responses에 적재되었습니다.")
 
             st.markdown("**Sheets 연결 (시뮬레이션)**")
             sheets_url = st.text_input("Google Sheets URL", placeholder="https://docs.google.com/spreadsheets/...")
