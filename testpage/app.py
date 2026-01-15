@@ -1,12 +1,12 @@
 import io
 import streamlit as st
 import pandas as pd
-import re
 import time
 from datetime import datetime
 
 from integrations import google_forms, reporting, storage
 from src.analytics import qualitative, quantitative
+from src.etl.survey import classify_questions
 
 # --- 1. 페이지 및 스타일 설정 ---
 st.set_page_config(
@@ -95,95 +95,6 @@ def question_bank_records() -> list[dict]:
         .rename(columns={"question_id": "id"})
         .to_dict(orient="records")
     )
-
-
-def normalize_text(text: str) -> str:
-    text = re.sub(r"\d+", " ", text)
-    text = re.sub(r"[^\w\s가-힣]", " ", text)
-    text = text.replace("_", " ")
-    return re.sub(r"\s+", " ", text).strip()
-
-
-def mask_variables(text: str, course: str, instructor: str) -> str:
-    masked = text
-    if course:
-        masked = re.sub(re.escape(course), "{{COURSE}}", masked)
-    if instructor:
-        masked = re.sub(re.escape(instructor), "{{INSTRUCTOR}}", masked)
-    return masked
-
-
-def levenshtein_distance(a: str, b: str) -> int:
-    if a == b:
-        return 0
-    if not a:
-        return len(b)
-    if not b:
-        return len(a)
-
-    prev_row = list(range(len(b) + 1))
-    for i, char_a in enumerate(a, start=1):
-        curr_row = [i]
-        for j, char_b in enumerate(b, start=1):
-            insertions = prev_row[j] + 1
-            deletions = curr_row[j - 1] + 1
-            substitutions = prev_row[j - 1] + (char_a != char_b)
-            curr_row.append(min(insertions, deletions, substitutions))
-        prev_row = curr_row
-    return prev_row[-1]
-
-
-def similarity_ratio(a: str, b: str) -> float:
-    if not a and not b:
-        return 1.0
-    distance = levenshtein_distance(a, b)
-    max_len = max(len(a), len(b))
-    return 1 - (distance / max_len) if max_len else 0.0
-
-
-def find_question_match(cleaned: str, question_bank: list[dict]) -> dict:
-    best_match = None
-    best_score = 0.0
-    for question in question_bank:
-        normalized_question = normalize_text(question["text"])
-        score = similarity_ratio(cleaned, normalized_question)
-        if score > best_score:
-            best_score = score
-            best_match = question
-    return {"match": best_match, "score": best_score}
-
-
-def analyze_questions(raw_text: str, course: str, instructor: str, question_bank: list[dict]) -> list[dict]:
-    lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
-    results = []
-    for line in lines:
-        normalized = normalize_text(line)
-        masked = mask_variables(normalized, course, instructor)
-        match_info = find_question_match(masked, question_bank)
-        match = match_info["match"]
-        score = match_info["score"]
-
-        if match and score >= 0.95:
-            status = "existing"
-            note = "기존 문항 일치 (자동 병합)"
-        elif match and score >= 0.8:
-            status = "similar"
-            note = f"유사 문항 발견: '{match['text']}'"
-        else:
-            status = "new"
-            note = "DB에 없는 신규 문항 (등록 필요)"
-
-        results.append(
-            {
-                "status": status,
-                "orig": line,
-                "clean": masked,
-                "note": note,
-                "match_id": match["id"] if match else None,
-                "score": score,
-            }
-        )
-    return results
 
 # --- 3. 사이드바 메뉴 ---
 with st.sidebar:
@@ -419,12 +330,24 @@ Q2) 김철수 강사의 강의는 어땠나요?
     if analyze_btn:
         with st.spinner("AI가 문항을 분석하고 DB와 대조 중입니다..."):
             time.sleep(1.5)
-            st.session_state.analysis_payload = analyze_questions(
-                raw_text=raw_text,
-                course=course_name,
-                instructor=instructor_name,
+            lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
+            matches = classify_questions(
+                questions=lines,
                 question_bank=question_bank_records(),
+                course_name=course_name,
+                instructor_name=instructor_name,
             )
+            st.session_state.analysis_payload = [
+                {
+                    "status": match.status,
+                    "orig": match.original,
+                    "clean": match.cleaned,
+                    "note": match.note,
+                    "match_id": match.match_id,
+                    "score": match.score,
+                }
+                for match in matches
+            ]
             st.session_state.analysis_result = True
             
     if st.session_state.analysis_result:
