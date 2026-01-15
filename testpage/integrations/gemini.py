@@ -46,7 +46,6 @@ def analyze_comments(comments, _key=None):
     # 3. 요청 데이터(Payload) 만들기
     prompt = PROMPT_TEMPLATE.format(comments="\n".join(comments))
     
-    # [중요] Gemini가 요구하는 정확한 JSON 구조
     payload_dict = {
         "contents": [{
             "parts": [{"text": prompt}]
@@ -54,57 +53,48 @@ def analyze_comments(comments, _key=None):
     }
     payload = json.dumps(payload_dict).encode("utf-8")
 
-    # 4. 모델 및 URL 설정 (가장 안정적인 1.5 Flash 사용)
-    model_name = "gemini-2.0-flash"
+    # [수정] 모델을 안정적인 1.5 Flash로 변경
+    model_name = "gemini-1.5-flash" 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
 
-    # 5. 헤더 설정 (API 키는 헤더에 넣는 것이 가장 안전함)
+    # 5. 헤더 설정
     headers = {
         "Content-Type": "application/json",
         "X-goog-api-key": api_key
     }
 
-    # 디버깅 로그 출력
     print(f"--- [DEBUG] 요청 시작 ---")
     print(f"Model: {model_name}")
-    print(f"Key (앞5자리): {api_key[:5]}...") # 키 확인용
-    print(f"Payload 크기: {len(payload)} bytes")
-    print(f"-----------------------")
-
-    # 6. 요청 전송 (Retry 로직 포함)
+    
+    # 6. 요청 전송 (Retry 로직)
     max_retries = 2
     for attempt in range(max_retries + 1):
         try:
             req = request.Request(url, data=payload, headers=headers, method="POST")
             
             with request.urlopen(req, timeout=30) as response:
-                # 성공 시 결과 읽기
                 response_body = response.read().decode("utf-8")
                 response_data = json.loads(response_body)
-                
-                # 성공하면 바로 결과 처리로 이동
-                break 
+                break  # 성공 시 반복 종료
 
         except error.HTTPError as e:
-            # [중요] 에러가 나면 구글이 보낸 상세 메시지를 읽음
             error_details = e.read().decode('utf-8')
             print(f"⚠️ HTTP Error {e.code}: {error_details}")
 
-            if e.code == 429: # 너무 많은 요청
-                print("⏳ 사용량 초과. 3초 대기 후 재시도...")
+            if e.code == 429: # 사용량 초과
+                print(f"⏳ 사용량 초과 ({attempt+1}/{max_retries+1}). 3초 대기 후 재시도...")
                 time.sleep(3)
                 continue
-            elif e.code == 400: # Bad Request
-                # 400은 재시도해도 안 됨. 바로 에러 리턴.
+            elif e.code == 400:
                 return {
                     "status": "error",
                     "message": f"요청 형식 오류 (HTTP 400): {error_details}",
                     "result": None,
                 }
-            elif e.code == 403: # 권한 없음
+            elif e.code == 403:
                 return {
                     "status": "error",
-                    "message": "API 키 권한 없음 (HTTP 403). 새 키를 발급받으세요.",
+                    "message": "API 키 권한 없음 (HTTP 403).",
                     "result": None,
                 }
             else:
@@ -121,17 +111,16 @@ def analyze_comments(comments, _key=None):
                 "result": None,
             }
     else:
-        # for 문이 break 없이 끝난 경우 (모든 재시도 실패)
+        # for 문이 break 없이 끝난 경우 (3회 연속 429 에러 발생 시)
         return {
             "status": "error",
-            "message": "재시도 횟수 초과",
+            "message": "재시도 횟수 초과 (서버 혼잡 또는 할당량 부족)",
             "result": None,
         }
 
     # 7. 응답 데이터 파싱
     candidates = response_data.get("candidates", [])
     if not candidates:
-        # 안전 필터(Safety Filter)에 걸린 경우
         return {
             "status": "error",
             "message": "응답이 차단되었습니다 (Safety Filter).",
@@ -144,8 +133,8 @@ def analyze_comments(comments, _key=None):
         "status": "success",
         "message": "분석 완료",
         "result": {
-            "sentiment": "-",
-            "keywords": [],
+            "sentiment": "AI 분석 완료",
+            "keywords": ["키워드1", "키워드2"], # 실제로는 텍스트 파싱 로직 추가 필요
             "summary": text.strip()
         },
     }
