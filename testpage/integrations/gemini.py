@@ -66,7 +66,7 @@ def analyze_comments(comments, _key=None):
     payload = json.dumps(payload_dict).encode("utf-8")
 
     # [모델] 문서 기준 최신 모델 (2026년 현재 유효)
-    model_name = "gemini-2.5-flash"
+    model_name = "gemini-1.5-flash"
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
 
     headers = {
