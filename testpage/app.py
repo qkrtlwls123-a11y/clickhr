@@ -5,7 +5,8 @@ import re
 import time
 from datetime import datetime
 
-from integrations import gemini, google_forms, reporting, storage
+from integrations import google_forms, reporting, storage
+from src.analytics import qualitative, quantitative
 
 # --- 1. 페이지 및 스타일 설정 ---
 st.set_page_config(
@@ -72,6 +73,14 @@ if "responses_df" not in st.session_state:
     st.session_state.responses_df = st.session_state.storage_client.load_responses()
 if 'gemini_result' not in st.session_state:
     st.session_state.gemini_result = None
+if "report_summary_lines" not in st.session_state:
+    st.session_state.report_summary_lines = []
+if "report_highlights" not in st.session_state:
+    st.session_state.report_highlights = []
+if "report_pptx" not in st.session_state:
+    st.session_state.report_pptx = None
+if "report_pdf" not in st.session_state:
+    st.session_state.report_pdf = None
 def refresh_storage_cache() -> None:
     st.session_state.question_bank_df = st.session_state.storage_client.load_question_bank()
     st.session_state.survey_info_df = st.session_state.storage_client.load_survey_info()
@@ -501,25 +510,80 @@ elif "3." in menu:
     
     with tab_quant:
         st.caption(f"응답 데이터 필터: survey_id = {selected_survey_id}")
-        m1, m2, m3, m4 = st.columns(4)
-        respondent_count = filtered_responses["respondent_id"].nunique()
-        avg_score = (
-            filtered_responses["answer_value"].astype(float).mean()
-            if not filtered_responses.empty
-            else 0
+        analysis_metadata = st.session_state.survey_info_df.copy()
+        if not analysis_metadata.empty:
+            if "course_name" not in analysis_metadata.columns:
+                if "title" in analysis_metadata.columns:
+                    analysis_metadata["course_name"] = analysis_metadata["title"]
+                else:
+                    analysis_metadata["course_name"] = "미지정"
+            if "instructor_name" not in analysis_metadata.columns:
+                analysis_metadata["instructor_name"] = "미지정"
+            if "round" not in analysis_metadata.columns:
+                analysis_metadata["round"] = "1차"
+
+        quant_snapshot = quantitative.build_quantitative_snapshot(
+            filtered_responses,
+            question_bank=st.session_state.question_bank_df,
+            metadata=analysis_metadata,
         )
-        m1.metric("총 응답자", f"{respondent_count}명", "+12%")
-        m2.metric("평균 만족도", f"{avg_score:.1f} / 5.0", "+0.2")
-        m3.metric("NPS", "72점", "Excellent")
-        m4.metric("응답률", "94%", "+2%")
-        
+        overall_df = quant_snapshot["overall"]
+        overall_avg = float(overall_df["mean_score"].iloc[0]) if not overall_df.empty else 0.0
+        respondent_count = filtered_responses["respondent_id"].nunique()
+        nps_df = quantitative.calculate_nps(
+            filtered_responses,
+            question_bank=st.session_state.question_bank_df,
+            group_cols=[],
+        )
+        overall_nps = float(nps_df["nps"].iloc[0]) if not nps_df.empty else 0.0
+
+        st.session_state.report_summary_lines = [
+            f"총 응답자 {respondent_count}명",
+            f"평균 만족도 {overall_avg:.1f} / 5.0",
+            f"NPS {overall_nps:.0f}점",
+        ]
+
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("총 응답자", f"{respondent_count}명")
+        m2.metric("평균 만족도", f"{overall_avg:.1f} / 5.0")
+        m3.metric("NPS", f"{overall_nps:.0f}점")
+        m4.metric("응답률", "94%")
+
         st.markdown("##### 📌 과정별 만족도 비교")
-        chart_data = pd.DataFrame({
-            "과정명": ["신임팀장", "승진자", "핵심가치", "DT교육"],
-            "만족도": [4.8, 4.2, 4.5, 3.9],
-            "목표치": [4.5, 4.5, 4.5, 4.5]
-        })
-        st.bar_chart(chart_data, x="과정명", y=["만족도", "목표치"], color=["#4e73df", "#eaecf4"])
+        course_df = quant_snapshot["by_course"].rename(
+            columns={"course_name": "과정명", "mean_score": "만족도"}
+        )
+        if not course_df.empty:
+            st.bar_chart(course_df, x="과정명", y="만족도", color="#4e73df")
+        else:
+            st.caption("과정별 데이터가 없습니다.")
+
+        st.markdown("##### 👩‍🏫 강사별 만족도")
+        instructor_df = quant_snapshot["by_instructor"].rename(
+            columns={"instructor_name": "강사명", "mean_score": "만족도"}
+        )
+        st.dataframe(instructor_df, use_container_width=True, hide_index=True)
+
+        st.markdown("##### 🧭 차수별 만족도")
+        round_df = quant_snapshot["by_round"].rename(
+            columns={"round": "차수", "mean_score": "만족도"}
+        )
+        st.dataframe(round_df, use_container_width=True, hide_index=True)
+
+        st.markdown("##### 📈 NPS 분석")
+        nps_breakdown = quant_snapshot["nps"].rename(
+            columns={
+                "course_name": "과정명",
+                "instructor_name": "강사명",
+                "round": "차수",
+                "nps": "NPS",
+                "promoters": "Promoters(%)",
+                "passives": "Passives(%)",
+                "detractors": "Detractors(%)",
+                "total": "응답수",
+            }
+        )
+        st.dataframe(nps_breakdown, use_container_width=True, hide_index=True)
 
     with tab_qual:
         st.info("🤖 Gemini AI Analysis: 수백 개의 주관식 코멘트를 읽고 핵심 키워드를 추출합니다.")
@@ -551,10 +615,17 @@ elif "3." in menu:
                         comments.extend(content.splitlines())
 
                 comments.extend([line for line in raw_comments.splitlines() if line.strip()])
-                analysis = gemini.analyze_comments(comments)
+                analysis = qualitative.summarize_comments(comments)
                 st.session_state.gemini_result = analysis
                 if analysis["status"] in {"success", "simulated"}:
                     st.toast("Gemini 분석 완료", icon="✅")
+                    result_payload = analysis.get("result") or {}
+                    keywords = result_payload.get("keywords", [])
+                    if keywords:
+                        st.session_state.report_highlights = [
+                            f"핵심 키워드: {', '.join(keywords)}",
+                            f"감정 톤: {result_payload.get('sentiment', '미지정')}",
+                        ]
                 else:
                     st.error(analysis["message"])
         
@@ -592,38 +663,70 @@ elif "4." in menu:
             project = st.selectbox("프로젝트", ["2026 신임팀장 과정", "2025 전사 조직진단"])
             report_format = st.radio("포맷", ["PPT (발표)"])
             include_ai = st.checkbox("AI 요약 포함", value=True)
-            summary_input = st.text_area(
-                "요약 문장",
-                value=(
+            default_summary = (
+                "\n".join(st.session_state.report_summary_lines)
+                if st.session_state.report_summary_lines
+                else (
                     "종합 만족도는 4.5점으로 상승했습니다.\n"
                     "신임팀장 과정의 실무 연계성이 높게 평가되었습니다."
-                ),
+                )
+            )
+            summary_input = st.text_area(
+                "요약 문장",
+                value=default_summary,
                 height=120,
+            )
+            default_highlights = (
+                "\n".join(st.session_state.report_highlights)
+                if st.session_state.report_highlights
+                else (
+                    "강의 콘텐츠: 실습 비중 확대 요청\n"
+                    "운영 지원: 사전 안내 개선 필요"
+                )
             )
             highlight_input = st.text_area(
                 "하이라이트",
-                value=(
-                    "강의 콘텐츠: 실습 비중 확대 요청\n"
-                    "운영 지원: 사전 안내 개선 필요"
-                ),
+                value=default_highlights,
                 height=100,
             )
-            
-            if st.button("PPT 생성", type="primary"):
-                with st.spinner("PPT 렌더링 중..."):
-                    summary_lines = [line for line in summary_input.splitlines() if line.strip()]
-                    highlight_lines = [line for line in highlight_input.splitlines() if line.strip()]
-                    pptx_bytes = reporting.build_pptx_report(
-                        title=project,
-                        summary_lines=summary_lines,
-                        highlights=highlight_lines,
-                    )
-                st.success("PPT 생성 완료")
+
+            summary_lines = [line for line in summary_input.splitlines() if line.strip()]
+            highlight_lines = [line for line in highlight_input.splitlines() if line.strip()]
+
+            col_ppt, col_pdf = st.columns(2)
+            with col_ppt:
+                if st.button("PPT 생성", type="primary"):
+                    with st.spinner("PPT 렌더링 중..."):
+                        st.session_state.report_pptx = reporting.build_pptx_report(
+                            title=project,
+                            summary_lines=summary_lines,
+                            highlights=highlight_lines,
+                        )
+                    st.success("PPT 생성 완료")
+
+            with col_pdf:
+                if st.button("PDF 생성", type="secondary"):
+                    with st.spinner("PDF 렌더링 중..."):
+                        st.session_state.report_pdf = reporting.build_pdf_report(
+                            title=project,
+                            summary_lines=summary_lines,
+                            highlights=highlight_lines,
+                        )
+                    st.success("PDF 생성 완료")
+
+            if st.session_state.report_pptx:
                 st.download_button(
                     label="PPT 다운로드",
-                    data=pptx_bytes,
+                    data=st.session_state.report_pptx,
                     file_name=f"{project}_report.pptx",
                     mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                )
+            if st.session_state.report_pdf:
+                st.download_button(
+                    label="PDF 다운로드",
+                    data=st.session_state.report_pdf,
+                    file_name=f"{project}_report.pdf",
+                    mime="application/pdf",
                 )
     
     with col_preview:
