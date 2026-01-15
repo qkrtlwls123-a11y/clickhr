@@ -5,7 +5,7 @@ import re
 import time
 from datetime import datetime
 
-from integrations import gemini, google_forms, reporting
+from integrations import gemini, google_forms, reporting, storage
 
 # --- 1. 페이지 및 스타일 설정 ---
 st.set_page_config(
@@ -62,21 +62,30 @@ if 'analysis_result' not in st.session_state:
     st.session_state.analysis_result = None
 if 'analysis_payload' not in st.session_state:
     st.session_state.analysis_payload = []
-if 'survey_info' not in st.session_state:
-    st.session_state.survey_info = []
-if 'responses' not in st.session_state:
-    st.session_state.responses = pd.DataFrame(
-        columns=["survey_id", "respondent_id", "question_id", "answer_value"]
-    )
+if "storage_client" not in st.session_state:
+    st.session_state.storage_client = storage.get_storage()
+if "question_bank_df" not in st.session_state:
+    st.session_state.question_bank_df = storage.seed_question_bank(st.session_state.storage_client)
+if "survey_info_df" not in st.session_state:
+    st.session_state.survey_info_df = st.session_state.storage_client.load_survey_info()
+if "responses_df" not in st.session_state:
+    st.session_state.responses_df = st.session_state.storage_client.load_responses()
 if 'gemini_result' not in st.session_state:
     st.session_state.gemini_result = None
-if 'question_bank' not in st.session_state:
-    st.session_state.question_bank = [
-        {"id": "L-001", "text": "{{COURSE}} 과정에 대해 만족하십니까?"},
-        {"id": "L-002", "text": "{{INSTRUCTOR}} 강사의 강의는 어땠나요?"},
-        {"id": "L-003", "text": "강의 시간은 적절했나요?"},
-        {"id": "L-004", "text": "교육 시간 배분은 적절했나요?"},
-    ]
+def refresh_storage_cache() -> None:
+    st.session_state.question_bank_df = st.session_state.storage_client.load_question_bank()
+    st.session_state.survey_info_df = st.session_state.storage_client.load_survey_info()
+    st.session_state.responses_df = st.session_state.storage_client.load_responses()
+
+
+def question_bank_records() -> list[dict]:
+    if st.session_state.question_bank_df.empty:
+        return []
+    return (
+        st.session_state.question_bank_df[["question_id", "text"]]
+        .rename(columns={"question_id": "id"})
+        .to_dict(orient="records")
+    )
 
 
 def normalize_text(text: str) -> str:
@@ -209,22 +218,40 @@ if "1." in menu:
         tab1, tab2 = st.tabs(["🔴 리더십 역량", "🔵 조직 만족도"])
         
         with tab1:
-            q_data = pd.DataFrame([
-                {"선택": False, "카테고리": "전략", "문항": "{{COURSE}} 과정의 난이도는 적절했나요?", "ID": "L-001"},
-                {"선택": False, "카테고리": "소통", "문항": "{{INSTRUCTOR}} 강사의 전문성은 어떠했나요?", "ID": "L-002"},
-                {"선택": False, "카테고리": "운영", "문항": "강의장은 쾌적했나요?", "ID": "L-003"},
-                {"선택": False, "카테고리": "성과", "문항": "교육 내용은 실무에 도움이 되나요?", "ID": "L-004"},
-                {"선택": False, "카테고리": "NPS", "문항": "향후 추천할 의향이 있나요?", "ID": "L-005"},
-            ])
+            q_data = st.session_state.question_bank_df.copy()
+            if q_data.empty:
+                q_data = storage.DEFAULT_QUESTION_BANK.copy()
+            q_data = q_data.reindex(columns=["question_id", "category", "text"])
+            q_data["category"] = q_data["category"].fillna("기타")
+            q_data = q_data.rename(
+                columns={
+                    "question_id": "ID",
+                    "text": "문항",
+                    "category": "카테고리",
+                }
+            )
+            q_data.insert(0, "선택", False)
             edited_df = st.data_editor(
-                q_data, 
+                q_data,
                 column_config={
                     "선택": st.column_config.CheckboxColumn(required=True),
                     "문항": st.column_config.TextColumn(width="large")
-                }, 
-                hide_index=True, 
+                },
+                hide_index=True,
                 use_container_width=True
             )
+            if st.button("💾 질문은행 저장", type="secondary"):
+                edited_df = edited_df.copy()
+                if "ID" in edited_df.columns:
+                    missing_ids = edited_df["ID"].isna() | (edited_df["ID"].astype(str).str.strip() == "")
+                    if missing_ids.any():
+                        base_index = len(st.session_state.question_bank_df) + 1
+                        new_ids = [f"QB-{base_index + i:03d}" for i in range(missing_ids.sum())]
+                        edited_df.loc[missing_ids, "ID"] = new_ids
+                standardized = storage.standardize_question_bank(edited_df)
+                st.session_state.storage_client.save_question_bank(standardized)
+                refresh_storage_cache()
+                st.toast("질문은행이 저장되었습니다.", icon="✅")
             
     with col2:
         st.subheader("🛒 문항 장바구니")
@@ -248,14 +275,22 @@ if "1." in menu:
                     questions = selected_rows["문항"].tolist()
                     form_result = google_forms.create_google_form(form_title, questions)
                 survey_id = form_result.get("form_id") or f"SUR-{datetime.now().strftime('%Y%m%d%H%M%S')}-{count}"
-                st.session_state.survey_info.append({
-                    "survey_id": survey_id,
-                    "title": form_title,
-                    "question_count": count,
-                    "created_at": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                    "form_url": form_result.get("form_url"),
-                    "status": form_result.get("status")
-                })
+                survey_record = pd.DataFrame(
+                    [
+                        {
+                            "survey_id": survey_id,
+                            "title": form_title,
+                            "question_count": count,
+                            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "form_url": form_result.get("form_url"),
+                            "status": form_result.get("status"),
+                        }
+                    ]
+                )
+                st.session_state.storage_client.append_survey_info(
+                    storage.standardize_survey_info(survey_record)
+                )
+                refresh_storage_cache()
                 st.toast("설문지가 생성되었습니다!", icon="✅")
                 if form_result.get("form_url"):
                     st.success(f"[링크 생성 완료]\n\n{form_result['form_url']}")
@@ -267,8 +302,8 @@ if "1." in menu:
 
     with survey_meta_container:
         st.subheader("🗂️ 설문 메타데이터 저장소 (survey_info)")
-        if st.session_state.survey_info:
-            st.dataframe(pd.DataFrame(st.session_state.survey_info), use_container_width=True, hide_index=True)
+        if not st.session_state.survey_info_df.empty:
+            st.dataframe(st.session_state.survey_info_df, use_container_width=True, hide_index=True)
         else:
             st.caption("아직 생성된 설문이 없습니다. 설문을 생성하면 메타데이터가 저장됩니다.")
 
@@ -284,8 +319,8 @@ elif "2." in menu:
         st.markdown("### 1. 데이터 입력 및 설정")
         with st.container(border=True):
             st.markdown("#### 🔄 응답 데이터 적재 (responses)")
-            if st.session_state.survey_info:
-                survey_id_options = [s["survey_id"] for s in st.session_state.survey_info]
+            if not st.session_state.survey_info_df.empty:
+                survey_id_options = st.session_state.survey_info_df["survey_id"].tolist()
                 selected_survey_id = st.selectbox("survey_id 선택", survey_id_options)
             else:
                 selected_survey_id = None
@@ -304,10 +339,9 @@ elif "2." in menu:
                 if missing:
                     st.error(f"필수 컬럼 누락: {', '.join(sorted(missing))}")
                 else:
-                    st.session_state.responses = pd.concat(
-                        [st.session_state.responses, incoming],
-                        ignore_index=True
-                    )
+                    standardized = storage.standardize_responses(incoming)
+                    st.session_state.storage_client.append_responses(standardized)
+                    refresh_storage_cache()
                     st.success(f"{len(incoming)}건의 응답이 responses에 적재되었습니다.")
 
             st.markdown("**Sheets 연결 (시뮬레이션)**")
@@ -318,24 +352,24 @@ elif "2." in menu:
                         "survey_id": selected_survey_id,
                         "respondent_id": "R-001",
                         "question_id": "L-001",
-                        "answer_value": 5
+                        "answer_value": 5,
                     },
                     {
                         "survey_id": selected_survey_id,
                         "respondent_id": "R-002",
                         "question_id": "L-002",
-                        "answer_value": 4
-                    }
+                        "answer_value": 4,
+                    },
                 ])
-                st.session_state.responses = pd.concat(
-                    [st.session_state.responses, simulated],
-                    ignore_index=True
+                st.session_state.storage_client.append_responses(
+                    storage.standardize_responses(simulated)
                 )
+                refresh_storage_cache()
                 st.success("Sheets 연결 완료: 2건의 샘플 응답이 적재되었습니다.")
 
-            if not st.session_state.responses.empty:
+            if not st.session_state.responses_df.empty:
                 st.markdown("**현재 responses 데이터**")
-                st.dataframe(st.session_state.responses, use_container_width=True, hide_index=True)
+                st.dataframe(st.session_state.responses_df, use_container_width=True, hide_index=True)
 
             # React 앱의 변수 설정 부분 반영
             c1, c2 = st.columns(2)
@@ -380,7 +414,7 @@ Q2) 김철수 강사의 강의는 어땠나요?
                 raw_text=raw_text,
                 course=course_name,
                 instructor=instructor_name,
-                question_bank=st.session_state.question_bank,
+                question_bank=question_bank_records(),
             )
             st.session_state.analysis_result = True
             
@@ -426,14 +460,21 @@ Q2) 김철수 강사의 강의는 어땠나요?
             if st.button("확인 및 DB 저장"):
                 new_questions = [r for r in results if r["status"] == "new"]
                 if new_questions:
-                    next_index = len(st.session_state.question_bank) + 1
+                    existing_count = len(st.session_state.question_bank_df)
+                    new_rows = []
                     for offset, item in enumerate(new_questions):
-                        st.session_state.question_bank.append(
+                        new_rows.append(
                             {
-                                "id": f"NEW-{next_index + offset:03d}",
+                                "question_id": f"NEW-{existing_count + offset + 1:03d}",
                                 "text": item["clean"],
+                                "category": "신규",
+                                "created_at": storage.utc_now(),
+                                "updated_at": storage.utc_now(),
                             }
                         )
+                    if new_rows:
+                        st.session_state.storage_client.append_question_bank(pd.DataFrame(new_rows))
+                        refresh_storage_cache()
                 st.balloons()
                 st.success("데이터베이스에 성공적으로 반영되었습니다.")
                 st.session_state.analysis_result = None # 초기화
@@ -442,19 +483,19 @@ Q2) 김철수 강사의 강의는 어땠나요?
 # [MODULE 3] AI 분석
 # ==============================================================================
 elif "3." in menu:
-    if st.session_state.survey_info:
-        survey_id_options = [s["survey_id"] for s in st.session_state.survey_info]
+    if not st.session_state.survey_info_df.empty:
+        survey_id_options = st.session_state.survey_info_df["survey_id"].tolist()
         selected_survey_id = st.selectbox("분석 대상 survey_id 선택", survey_id_options)
     else:
         selected_survey_id = None
         st.warning("설문 메타데이터가 없습니다. Module 1에서 설문을 생성하세요.")
 
     if selected_survey_id:
-        filtered_responses = st.session_state.responses[
-            st.session_state.responses["survey_id"] == selected_survey_id
+        filtered_responses = st.session_state.responses_df[
+            st.session_state.responses_df["survey_id"] == selected_survey_id
         ]
     else:
-        filtered_responses = st.session_state.responses.iloc[0:0]
+        filtered_responses = st.session_state.responses_df.iloc[0:0]
 
     tab_quant, tab_qual = st.tabs(["📊 정량 데이터 분석", "💬 정성 데이터(AI) 분석"])
     
