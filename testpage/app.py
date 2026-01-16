@@ -81,6 +81,8 @@ if "report_pptx" not in st.session_state:
     st.session_state.report_pptx = None
 if "report_pdf" not in st.session_state:
     st.session_state.report_pdf = None
+if "report_excel" not in st.session_state:
+    st.session_state.report_excel = None
 def refresh_storage_cache() -> None:
     st.session_state.question_bank_df = st.session_state.storage_client.load_question_bank()
     st.session_state.survey_info_df = st.session_state.storage_client.load_survey_info()
@@ -584,7 +586,6 @@ elif "4." in menu:
         st.subheader("⚙️ 보고서 설정")
         with st.container(border=True):
             project = st.selectbox("프로젝트", ["2026 신임팀장 과정", "2025 전사 조직진단"])
-            report_format = st.radio("포맷", ["PPT (발표)"])
             include_ai = st.checkbox("AI 요약 포함", value=True)
             default_summary = (
                 "\n".join(st.session_state.report_summary_lines)
@@ -616,7 +617,7 @@ elif "4." in menu:
             summary_lines = [line for line in summary_input.splitlines() if line.strip()]
             highlight_lines = [line for line in highlight_input.splitlines() if line.strip()]
 
-            col_ppt, col_pdf = st.columns(2)
+            col_ppt, col_pdf, col_excel = st.columns(3)
             with col_ppt:
                 if st.button("PPT 생성", type="primary"):
                     with st.spinner("PPT 렌더링 중..."):
@@ -637,6 +638,16 @@ elif "4." in menu:
                         )
                     st.success("PDF 생성 완료")
 
+            with col_excel:
+                if st.button("Excel 생성", type="secondary"):
+                    with st.spinner("Excel 렌더링 중..."):
+                        st.session_state.report_excel = reporting.build_excel_report(
+                            title=project,
+                            summary_lines=summary_lines,
+                            highlights=highlight_lines,
+                        )
+                    st.success("Excel 생성 완료")
+
             if st.session_state.report_pptx:
                 st.download_button(
                     label="PPT 다운로드",
@@ -650,6 +661,13 @@ elif "4." in menu:
                     data=st.session_state.report_pdf,
                     file_name=f"{project}_report.pdf",
                     mime="application/pdf",
+                )
+            if st.session_state.report_excel:
+                st.download_button(
+                    label="Excel 다운로드",
+                    data=st.session_state.report_excel,
+                    file_name=f"{project}_report.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 )
     
     with col_preview:

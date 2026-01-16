@@ -136,3 +136,36 @@ def build_pdf_report(title: str, summary_lines: list[str], highlights: list[str]
         return output.getvalue()
     except Exception:
         return _build_minimal_pdf(lines)
+
+
+def build_excel_report(title: str, summary_lines: list[str], highlights: list[str]) -> bytes:
+    try:
+        import pandas as pd
+
+        summary_df = pd.DataFrame({"Summary": summary_lines or ["요약 정보가 없습니다."]})
+        highlights_df = pd.DataFrame({"Highlights": highlights or ["하이라이트 정보가 없습니다."]})
+        meta_df = pd.DataFrame(
+            {
+                "Title": [title],
+                "Generated At": [datetime.now().strftime("%Y-%m-%d %H:%M:%S")],
+                "Source": ["Click Insight Hub | HR Analytics"],
+            }
+        )
+
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            meta_df.to_excel(writer, sheet_name="Meta", index=False)
+            summary_df.to_excel(writer, sheet_name="Summary", index=False)
+            highlights_df.to_excel(writer, sheet_name="Highlights", index=False)
+        output.seek(0)
+        return output.getvalue()
+    except Exception:
+        fallback = BytesIO()
+        fallback.write("Title,Section,Text\n".encode("utf-8"))
+        fallback.write(f"{title},Summary,".encode("utf-8"))
+        fallback.write(" | ".join(summary_lines).encode("utf-8"))
+        fallback.write("\n".encode("utf-8"))
+        fallback.write(f"{title},Highlights,".encode("utf-8"))
+        fallback.write(" | ".join(highlights).encode("utf-8"))
+        fallback.write("\n".encode("utf-8"))
+        return fallback.getvalue()
