@@ -65,10 +65,14 @@
         .gradient-header { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; }
         
         /* 네비게이션 스타일 */
-        .nav-btn { flex: 0 0 auto; padding: 0 8px; font-size: 0.75rem; }
-        .nav-btn i { font-size: 1.25rem; margin-bottom: 2px; }
-        .nav-btn.active { color: #2563eb; font-weight: bold; }
-        .nav-btn.active i { transform: scale(1.1); color: #2563eb; }
+        .nav-main-btn,
+        .nav-sub-btn { flex: 0 0 auto; padding: 0 8px; font-size: 0.75rem; }
+        .nav-main-btn i,
+        .nav-sub-btn i { font-size: 1.25rem; margin-bottom: 2px; }
+        .nav-main-btn.active,
+        .nav-sub-btn.active { color: #2563eb; font-weight: bold; }
+        .nav-main-btn.active i,
+        .nav-sub-btn.active i { transform: scale(1.1); color: #2563eb; }
         
         /* 네비게이션 바 가로 스크롤 (필요시) */
         .nav-scroll { overflow-x: auto; -ms-overflow-style: none; scrollbar-width: none; white-space: nowrap; }
@@ -442,20 +446,30 @@
                     <div class="mt-6 bg-yellow-100 text-yellow-900 text-base p-4 rounded-xl w-full border border-yellow-200">
                         💡 <strong>Tip:</strong> 행동 단계에서 <strong class="underline">손익계산서</strong>에 미리 적어두면, 턴 종료 후 빠르고 정확하게 정산할 수 있습니다.
                     </div>
+                </div>
+            </div>
 
-                    <div class="w-full mt-8">
-                        <div class="text-left w-full bg-white border border-purple-100 rounded-2xl p-5 shadow-sm">
-                            <div class="flex items-center justify-between mb-3">
-                                <h4 class="text-lg font-bold text-purple-800">손익 계산기</h4>
-                                <span class="text-xs text-gray-400"></span>
-                            </div>
-                            <div id="settlement-app"></div>
+            <!-- 7. 손익계산기 -->
+            <div class="flashcard">
+                <div class="bg-indigo-600 text-white p-6 pt-8">
+                    <span class="bg-white/20 text-white text-sm font-bold px-2 py-1 rounded">정산 도구</span>
+                    <h2 class="text-3xl font-bold mt-2"><i class="fas fa-calculator mr-3"></i>손익계산기</h2>
+                </div>
+                <div class="card-content p-6">
+                    <div class="mb-4 text-sm text-gray-500">
+                        수입(+)/지출(-)을 입력하면 이번 턴 손익과 잔액을 바로 확인할 수 있습니다.
+                    </div>
+                    <div class="text-left w-full bg-white border border-indigo-100 rounded-2xl p-5 shadow-sm">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-lg font-bold text-indigo-800">손익 계산기</h4>
+                            <span class="text-xs text-gray-400">직접 입력 가능</span>
                         </div>
+                        <div id="settlement-app"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- 7. Q&A -->
+            <!-- 8. Q&A -->
             <div class="flashcard">
                 <div class="bg-indigo-600 text-white p-6 pt-8">
                     <span class="bg-white/20 text-white text-sm font-bold px-2 py-1 rounded">Q&A</span>
@@ -631,39 +645,99 @@
         <!-- Navigation -->
         <div class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 pb-safe shadow-lg z-50">
             <div class="w-full overflow-x-auto nav-scroll">
-                <div class="flex justify-between items-center px-4 py-3 min-w-max space-x-4">
-                    <button onclick="goToSlide(0)" class="nav-btn active flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-                        <i class="fas fa-home text-xl mb-1"></i>
-                        <span class="text-xs font-medium">홈</span>
-                    </button>
-                    <button onclick="goToSlide(1)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-                        <i class="fas fa-users text-xl mb-1"></i>
-                        <span class="text-xs font-medium">준비</span>
-                    </button>
-                    <button onclick="goToSlide(2)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-                        <i class="fas fa-calculator text-xl mb-1"></i>
-                        <span class="text-xs font-medium">세팅</span>
-                    </button>
-                    <button onclick="goToSlide(3)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-                        <i class="fas fa-dice text-xl mb-1"></i>
-                        <span class="text-xs font-medium">이동</span>
-                    </button>
-                    <button onclick="goToSlide(4)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-                        <i class="fas fa-briefcase text-xl mb-1"></i>
-                        <span class="text-xs font-medium">사업</span>
-                    </button>
-                    <button onclick="goToSlide(5)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-                        <i class="fas fa-star text-xl mb-1"></i>
-                        <span class="text-xs font-medium">특수</span>
-                    </button>
-                    <button onclick="goToSlide(6)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-                        <i class="fas fa-coins text-xl mb-1"></i>
-                        <span class="text-xs font-medium">정산</span>
-                    </button>
-                     <button onclick="goToSlide(7)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-                        <i class="fas fa-question-circle text-xl mb-1"></i>
-                        <span class="text-xs font-medium">Q&A</span>
-                    </button>
+                <div class="flex flex-col gap-2 px-4 py-3 min-w-max">
+                    <div class="flex justify-between items-center space-x-4">
+                        <button
+                            onclick="goToSlide(1)"
+                            class="nav-main-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition"
+                            data-main-tab="prepare"
+                        >
+                            <i class="fas fa-users text-xl mb-1"></i>
+                            <span class="text-xs font-medium">준비</span>
+                        </button>
+                        <button
+                            onclick="goToSlide(3)"
+                            class="nav-main-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition"
+                            data-main-tab="progress"
+                        >
+                            <i class="fas fa-route text-xl mb-1"></i>
+                            <span class="text-xs font-medium">진행</span>
+                        </button>
+                        <button
+                            onclick="goToSlide(7)"
+                            class="nav-main-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition"
+                            data-main-tab="calculator"
+                        >
+                            <i class="fas fa-calculator text-xl mb-1"></i>
+                            <span class="text-xs font-medium">손익계산기</span>
+                        </button>
+                        <button
+                            onclick="goToSlide(8)"
+                            class="nav-main-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition"
+                            data-main-tab="qa"
+                        >
+                            <i class="fas fa-question-circle text-xl mb-1"></i>
+                            <span class="text-xs font-medium">Q&A</span>
+                        </button>
+                    </div>
+                    <div
+                        id="sub-nav-prepare"
+                        class="flex justify-between items-center space-x-3 text-gray-400"
+                    >
+                        <button
+                            onclick="goToSlide(1)"
+                            class="nav-sub-btn flex flex-col items-center hover:text-blue-600 transition"
+                            data-sub-tab="prepare-role"
+                        >
+                            <i class="fas fa-user-friends text-xl mb-1"></i>
+                            <span class="text-xs font-medium">준비</span>
+                        </button>
+                        <button
+                            onclick="goToSlide(2)"
+                            class="nav-sub-btn flex flex-col items-center hover:text-blue-600 transition"
+                            data-sub-tab="prepare-setting"
+                        >
+                            <i class="fas fa-credit-card text-xl mb-1"></i>
+                            <span class="text-xs font-medium">세팅</span>
+                        </button>
+                    </div>
+                    <div
+                        id="sub-nav-progress"
+                        class="hidden justify-between items-center space-x-3 text-gray-400"
+                    >
+                        <button
+                            onclick="goToSlide(3)"
+                            class="nav-sub-btn flex flex-col items-center hover:text-blue-600 transition"
+                            data-sub-tab="progress-move"
+                        >
+                            <i class="fas fa-dice text-xl mb-1"></i>
+                            <span class="text-xs font-medium">이동</span>
+                        </button>
+                        <button
+                            onclick="goToSlide(4)"
+                            class="nav-sub-btn flex flex-col items-center hover:text-blue-600 transition"
+                            data-sub-tab="progress-business"
+                        >
+                            <i class="fas fa-briefcase text-xl mb-1"></i>
+                            <span class="text-xs font-medium">사업</span>
+                        </button>
+                        <button
+                            onclick="goToSlide(5)"
+                            class="nav-sub-btn flex flex-col items-center hover:text-blue-600 transition"
+                            data-sub-tab="progress-special"
+                        >
+                            <i class="fas fa-star text-xl mb-1"></i>
+                            <span class="text-xs font-medium">특수</span>
+                        </button>
+                        <button
+                            onclick="goToSlide(6)"
+                            class="nav-sub-btn flex flex-col items-center hover:text-blue-600 transition"
+                            data-sub-tab="progress-settlement"
+                        >
+                            <i class="fas fa-coins text-xl mb-1"></i>
+                            <span class="text-xs font-medium">정산</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -683,7 +757,10 @@
     <script>
         let currentSlide = 0;
         const slides = document.querySelectorAll('.flashcard');
-        const navBtns = document.querySelectorAll('.nav-btn');
+        const mainNavBtns = document.querySelectorAll('.nav-main-btn');
+        const subNavBtns = document.querySelectorAll('.nav-sub-btn');
+        const subNavPrepare = document.getElementById('sub-nav-prepare');
+        const subNavProgress = document.getElementById('sub-nav-progress');
         const totalSlides = slides.length;
 
         function updateSlide() {
@@ -697,19 +774,39 @@
             });
 
             // Update Navigation Buttons Highlight
-            navBtns.forEach(btn => btn.classList.remove('active'));
-            
-            // Map slides to nav buttons (Simplified)
-            // 0: 홈, 1: 준비, 2: 세팅, 3: 이동, 4: 사업, 5: 특수, 6: 정산, 7: Q&A, 8: End
-            if (currentSlide === 0) navBtns[0].classList.add('active');
-            else if (currentSlide === 1) navBtns[1].classList.add('active');
-            else if (currentSlide === 2) navBtns[2].classList.add('active');
-            else if (currentSlide === 3) navBtns[3].classList.add('active');
-            else if (currentSlide === 4) navBtns[4].classList.add('active');
-            else if (currentSlide === 5) navBtns[5].classList.add('active');
-            else if (currentSlide === 6) navBtns[6].classList.add('active');
-            else if (currentSlide === 7) navBtns[7].classList.add('active');
-            else if (currentSlide === 8) navBtns[7].classList.add('active'); 
+            mainNavBtns.forEach(btn => btn.classList.remove('active'));
+            subNavBtns.forEach(btn => btn.classList.remove('active'));
+
+            subNavPrepare.classList.add('hidden');
+            subNavProgress.classList.add('hidden');
+
+            // Map slides to nav buttons
+            // 0: 인트로, 1: 준비, 2: 세팅, 3: 이동, 4: 사업, 5: 특수, 6: 정산, 7: 손익계산기, 8: Q&A, 9: End
+            if (currentSlide === 1 || currentSlide === 2) {
+                document.querySelector('[data-main-tab="prepare"]').classList.add('active');
+                subNavPrepare.classList.remove('hidden');
+                if (currentSlide === 1) {
+                    document.querySelector('[data-sub-tab="prepare-role"]').classList.add('active');
+                } else {
+                    document.querySelector('[data-sub-tab="prepare-setting"]').classList.add('active');
+                }
+            } else if (currentSlide >= 3 && currentSlide <= 6) {
+                document.querySelector('[data-main-tab="progress"]').classList.add('active');
+                subNavProgress.classList.remove('hidden');
+                if (currentSlide === 3) {
+                    document.querySelector('[data-sub-tab="progress-move"]').classList.add('active');
+                } else if (currentSlide === 4) {
+                    document.querySelector('[data-sub-tab="progress-business"]').classList.add('active');
+                } else if (currentSlide === 5) {
+                    document.querySelector('[data-sub-tab="progress-special"]').classList.add('active');
+                } else {
+                    document.querySelector('[data-sub-tab="progress-settlement"]').classList.add('active');
+                }
+            } else if (currentSlide === 7) {
+                document.querySelector('[data-main-tab="calculator"]').classList.add('active');
+            } else if (currentSlide === 8) {
+                document.querySelector('[data-main-tab="qa"]').classList.add('active');
+            }
             
             // Auto scroll removed
         }
@@ -968,6 +1065,7 @@
 
             const sanitizeInputValue = (value, activeUnit) => {
                 if (value === "") return value;
+                if (value.trim().startsWith("-")) return null;
                 if (activeUnit === "K" && value.includes(".")) return null;
 
                 const digits = value.replace(/\D/g, "");
@@ -983,7 +1081,7 @@
                 if (Number.isNaN(numericValue)) return 0;
 
                 const inM = activeUnit === "M" ? numericValue : numericValue / 1000;
-                return Math.round(inM * 10) / 10;
+                return Math.max(0, Math.round(inM * 10) / 10);
             };
 
             const formatAmount = (valueInM) => {
@@ -1117,6 +1215,7 @@
                         <input
                             type="number"
                             step={UNIT_CONFIG[unit].step}
+                            min="0"
                             inputMode={unit === "K" ? "numeric" : "decimal"}
                             value={getDisplayValue(inputs[field])}
                             onChange={(e) => handleInputChange(field, e.target.value)}
@@ -1206,7 +1305,7 @@
                                     <div className="mb-3">
                                         <div className="flex justify-between items-end mb-1">
                                             <label className="text-xs font-bold text-gray-500">
-                                                월급 (Go)
+                                                월급
                                             </label>
                                             <button
                                                 onClick={() => setInputValueInM("salary", 2)}
@@ -1218,6 +1317,7 @@
                                         <input
                                             type="number"
                                             step={UNIT_CONFIG[unit].step}
+                                            min="0"
                                             inputMode={unit === "K" ? "numeric" : "decimal"}
                                             value={getDisplayValue(inputs.salary)}
                                             onChange={(e) => handleInputChange("salary", e.target.value)}
@@ -1233,8 +1333,8 @@
                                     </div>
 
                                     <InputField label="통행료 수입" field="rentIn" color="blue" />
-                                    <InputField label="매각/협상" field="tradeIn" color="blue" />
-                                    <InputField label="기타(복불복)" field="etcIn" color="blue" />
+                                    <InputField label="사업 매각" field="tradeIn" color="blue" />
+                                    <InputField label="복불복 카드" field="etcIn" color="blue" />
                                 </div>
 
                                 <div className="bg-red-50 p-3 rounded-xl">
@@ -1242,24 +1342,25 @@
                                         <i className="fa-solid fa-arrow-trend-down mr-1"></i> 지출 (Expense)
                                     </h3>
 
-                                    <InputField label="투자(땅 구매)" field="invest" color="red" />
+                                    <InputField label="사업 투자 비용" field="invest" color="red" />
                                     <InputField label="통행료 지출" field="rentOut" color="red" />
 
                                     <div className="mb-2">
                                         <div className="flex justify-between items-end mb-1">
                                             <label className="text-xs font-bold text-gray-500">
-                                                기부/위기
+                                                사회공헌
                                             </label>
                                             <button
                                                 onClick={() => setInputValueInM("donation", 1)}
                                                 className="text-[10px] bg-red-200 text-red-700 px-1.5 py-0.5 rounded hover:bg-red-300"
                                             >
-                                                -1M 기부
+                                                -1M 사회공헌
                                             </button>
                                         </div>
                                         <input
                                             type="number"
                                             step={UNIT_CONFIG[unit].step}
+                                            min="0"
                                             inputMode={unit === "K" ? "numeric" : "decimal"}
                                             value={getDisplayValue(inputs.donation)}
                                             onChange={(e) => handleInputChange("donation", e.target.value)}
@@ -1270,26 +1371,12 @@
                                                 handleInputChange("donation", normalized);
                                             }}
                                             className="w-full p-2 border border-red-200 rounded-lg text-right font-mono text-red-700"
-                                            placeholder="기부"
-                                        />
-                                        <input
-                                            type="number"
-                                            step={UNIT_CONFIG[unit].step}
-                                            inputMode={unit === "K" ? "numeric" : "decimal"}
-                                            value={getDisplayValue(inputs.fine)}
-                                            onChange={(e) => handleInputChange("fine", e.target.value)}
-                                            onBlur={(e) => {
-                                                const normalized = normalizeInputValue(e.target.value, unit);
-                                                if (normalized === "" && e.target.value === "") return;
-                                                if (normalized === "") return;
-                                                handleInputChange("fine", normalized);
-                                            }}
-                                            className="w-full p-2 border border-red-200 rounded-lg text-right font-mono text-red-700 mt-1"
-                                            placeholder="위기/벌금"
+                                            placeholder="사회공헌"
                                         />
                                     </div>
 
-                                    <InputField label="인수/협상" field="tradeOut" color="red" />
+                                    <InputField label="기술 투자 실패" field="fine" color="red" />
+                                    <InputField label="복불복 카드" field="tradeOut" color="red" />
                                 </div>
                             </div>
 
