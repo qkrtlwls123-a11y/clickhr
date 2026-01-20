@@ -442,6 +442,16 @@
                     <div class="mt-6 bg-yellow-100 text-yellow-900 text-base p-4 rounded-xl w-full border border-yellow-200">
                         💡 <strong>Tip:</strong> 행동 단계에서 <strong class="underline">손익계산서</strong>에 미리 적어두면, 턴 종료 후 빠르고 정확하게 정산할 수 있습니다.
                     </div>
+
+                    <div class="w-full mt-8">
+                        <div class="text-left w-full bg-white border border-purple-100 rounded-2xl p-5 shadow-sm">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="text-lg font-bold text-purple-800">정산 계산기</h4>
+                                <span class="text-xs text-gray-400">JSX 임베딩</span>
+                            </div>
+                            <div id="settlement-app"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -853,6 +863,347 @@
             if (touchStartX - touchEndX > 50) nextSlide();
             if (touchEndX - touchStartX > 50) prevSlide();
         }
+    </script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script type="text/babel" data-presets="env,react">
+        const { useState } = React;
+
+        const App = () => {
+            const [teamName, setTeamName] = useState("");
+            const [currentCash, setCurrentCash] = useState(15);
+            const [turn, setTurn] = useState(1);
+            const [history, setHistory] = useState([]);
+
+            const [inputs, setInputs] = useState({
+                salary: 0,
+                rentIn: 0,
+                tradeIn: 0,
+                etcIn: 0,
+                invest: 0,
+                rentOut: 0,
+                tradeOut: 0,
+                donation: 0,
+                fine: 0,
+            });
+
+            const totalIncome = inputs.salary + inputs.rentIn + inputs.tradeIn + inputs.etcIn;
+            const totalExpense =
+                inputs.invest +
+                inputs.rentOut +
+                inputs.tradeOut +
+                inputs.donation +
+                inputs.fine;
+            const turnProfit = totalIncome - totalExpense;
+
+            const handleInputChange = (field, value) => {
+                setInputs((prev) => ({
+                    ...prev,
+                    [field]: parseFloat(value) || 0,
+                }));
+            };
+
+            const finishTurn = () => {
+                if (totalIncome === 0 && totalExpense === 0) {
+                    if (
+                        !window.confirm(
+                            "수입/지출 내역이 없습니다. 이대로 턴을 넘기시겠습니까? (휴가 등)"
+                        )
+                    ) {
+                        return;
+                    }
+                }
+
+                const newBalance = currentCash + turnProfit;
+                const turnData = {
+                    id: Date.now(),
+                    turn: turn,
+                    income: totalIncome,
+                    expense: totalExpense,
+                    profit: turnProfit,
+                    balance: newBalance,
+                    details: { ...inputs },
+                };
+
+                setHistory([turnData, ...history]);
+                setCurrentCash(newBalance);
+                setTurn(turn + 1);
+                setInputs({
+                    salary: 0,
+                    rentIn: 0,
+                    tradeIn: 0,
+                    etcIn: 0,
+                    invest: 0,
+                    rentOut: 0,
+                    tradeOut: 0,
+                    donation: 0,
+                    fine: 0,
+                });
+            };
+
+            const resetGame = () => {
+                if (window.confirm("모든 기록을 지우고 게임을 처음부터 시작할까요?")) {
+                    setTurn(1);
+                    setCurrentCash(15);
+                    setHistory([]);
+                    setInputs({
+                        salary: 0,
+                        rentIn: 0,
+                        tradeIn: 0,
+                        etcIn: 0,
+                        invest: 0,
+                        rentOut: 0,
+                        tradeOut: 0,
+                        donation: 0,
+                        fine: 0,
+                    });
+                }
+            };
+
+            const undoLastTurn = () => {
+                if (history.length === 0) return;
+                if (!window.confirm("마지막 턴 기록을 삭제하고 되돌리겠습니까?")) return;
+
+                const lastTurn = history[0];
+                const prevHistory = history.slice(1);
+
+                setHistory(prevHistory);
+                setCurrentCash(lastTurn.balance - lastTurn.profit);
+                setTurn(lastTurn.turn);
+            };
+
+            const colorClasses = {
+                blue: "border-blue-200 focus:ring-blue-500 text-blue-700",
+                red: "border-red-200 focus:ring-red-500 text-red-700",
+            };
+
+            const InputField = ({ label, field, color = "blue" }) => (
+                <div className="flex flex-col mb-2">
+                    <label className="text-xs text-gray-500 font-bold mb-1">{label}</label>
+                    <div className="flex items-center">
+                        <input
+                            type="number"
+                            step="0.1"
+                            value={inputs[field] === 0 ? "" : inputs[field]}
+                            onChange={(e) => handleInputChange(field, e.target.value)}
+                            placeholder="0"
+                            className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 text-right font-mono text-lg bg-white ${colorClasses[color]}`}
+                        />
+                        <span className="ml-2 text-gray-400 text-sm">M</span>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen bg-gray-100 p-4 max-w-md mx-auto font-sans rounded-2xl border border-gray-100">
+                    <header className="bg-white rounded-2xl p-6 shadow-sm mb-4 border border-gray-200">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <input
+                                    type="text"
+                                    placeholder="조 이름 입력"
+                                    className="text-lg font-bold text-gray-800 placeholder-gray-300 focus:outline-none bg-transparent w-32"
+                                    value={teamName}
+                                    onChange={(e) => setTeamName(e.target.value)}
+                                />
+                                <p className="text-xs text-gray-400">Financial Management</p>
+                            </div>
+                            <button
+                                onClick={resetGame}
+                                className="text-gray-400 hover:text-red-500"
+                                aria-label="정산 초기화"
+                            >
+                                <i className="fa-solid fa-rotate-left"></i>
+                            </button>
+                        </div>
+
+                        <div className="text-center">
+                            <p className="text-sm text-gray-500 mb-1">현재 보유 자산 (Cash)</p>
+                            <div className="text-5xl font-black text-blue-600 tracking-tight flex justify-center items-baseline">
+                                {currentCash.toLocaleString()}{" "}
+                                <span className="text-2xl ml-1 text-blue-400">M</span>
+                            </div>
+                        </div>
+                    </header>
+
+                    <div className="bg-white rounded-2xl shadow-lg border border-blue-100 overflow-hidden mb-6">
+                        <div className="bg-blue-600 text-white p-3 flex justify-between items-center">
+                            <h2 className="font-bold text-lg flex items-center">
+                                <span className="bg-white text-blue-600 text-xs px-2 py-1 rounded-full mr-2 font-black">
+                                    TURN {turn}
+                                </span>
+                                이번 턴 기록
+                            </h2>
+                            <span className="text-xs opacity-80">단위: M (1M=1000K)</span>
+                        </div>
+
+                        <div className="p-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-blue-50 p-3 rounded-xl">
+                                    <h3 className="text-blue-700 font-bold mb-3 flex items-center text-sm border-b border-blue-200 pb-1">
+                                        <i className="fa-solid fa-arrow-trend-up mr-1"></i> 수입 (Income)
+                                    </h3>
+
+                                    <div className="mb-3">
+                                        <div className="flex justify-between items-end mb-1">
+                                            <label className="text-xs font-bold text-gray-500">
+                                                월급 (Go)
+                                            </label>
+                                            <button
+                                                onClick={() => handleInputChange("salary", 2)}
+                                                className="text-[10px] bg-blue-200 text-blue-700 px-1.5 py-0.5 rounded hover:bg-blue-300"
+                                            >
+                                                +2M 자동
+                                            </button>
+                                        </div>
+                                        <input
+                                            type="number"
+                                            value={inputs.salary === 0 ? "" : inputs.salary}
+                                            onChange={(e) => handleInputChange("salary", e.target.value)}
+                                            className="w-full p-2 border border-blue-200 rounded-lg text-right font-mono text-blue-700"
+                                            placeholder="0"
+                                        />
+                                    </div>
+
+                                    <InputField label="통행료 수입" field="rentIn" color="blue" />
+                                    <InputField label="매각/협상" field="tradeIn" color="blue" />
+                                    <InputField label="기타(복불복)" field="etcIn" color="blue" />
+                                </div>
+
+                                <div className="bg-red-50 p-3 rounded-xl">
+                                    <h3 className="text-red-700 font-bold mb-3 flex items-center text-sm border-b border-red-200 pb-1">
+                                        <i className="fa-solid fa-arrow-trend-down mr-1"></i> 지출 (Expense)
+                                    </h3>
+
+                                    <InputField label="투자(땅 구매)" field="invest" color="red" />
+                                    <InputField label="통행료 지출" field="rentOut" color="red" />
+
+                                    <div className="mb-2">
+                                        <div className="flex justify-between items-end mb-1">
+                                            <label className="text-xs font-bold text-gray-500">
+                                                기부/위기
+                                            </label>
+                                            <button
+                                                onClick={() => handleInputChange("donation", 1)}
+                                                className="text-[10px] bg-red-200 text-red-700 px-1.5 py-0.5 rounded hover:bg-red-300"
+                                            >
+                                                -1M 기부
+                                            </button>
+                                        </div>
+                                        <input
+                                            type="number"
+                                            value={inputs.donation === 0 ? "" : inputs.donation}
+                                            onChange={(e) => handleInputChange("donation", e.target.value)}
+                                            className="w-full p-2 border border-red-200 rounded-lg text-right font-mono text-red-700"
+                                            placeholder="기부"
+                                        />
+                                        <input
+                                            type="number"
+                                            value={inputs.fine === 0 ? "" : inputs.fine}
+                                            onChange={(e) => handleInputChange("fine", e.target.value)}
+                                            className="w-full p-2 border border-red-200 rounded-lg text-right font-mono text-red-700 mt-1"
+                                            placeholder="위기/벌금"
+                                        />
+                                    </div>
+
+                                    <InputField label="인수/협상" field="tradeOut" color="red" />
+                                </div>
+                            </div>
+
+                            <div className="mt-4 p-3 bg-gray-800 rounded-xl text-white flex justify-between items-center shadow-lg">
+                                <div className="text-sm text-gray-400">
+                                    <span className="text-blue-400">+{totalIncome}</span> /{" "}
+                                    <span className="text-red-400">-{totalExpense}</span>
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-xs text-gray-400 block">이번 턴 손익</span>
+                                    <span
+                                        className={`text-xl font-bold ${
+                                            turnProfit >= 0 ? "text-green-400" : "text-red-400"
+                                        }`}
+                                    >
+                                        {turnProfit > 0 ? "+" : ""}
+                                        {turnProfit} M
+                                    </span>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={finishTurn}
+                                className="w-full mt-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-md transition flex items-center justify-center"
+                            >
+                                <i className="fa-solid fa-floppy-disk mr-2"></i> 턴 종료 및 저장
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <h3 className="font-bold text-gray-500 text-sm flex items-center px-2">
+                            <i className="fa-regular fa-clock mr-2"></i> 지난 턴 기록
+                            {history.length > 0 && (
+                                <button
+                                    onClick={undoLastTurn}
+                                    className="ml-auto text-xs text-red-400 underline"
+                                >
+                                    마지막 턴 취소
+                                </button>
+                            )}
+                        </h3>
+
+                        {history.length === 0 ? (
+                            <div className="text-center py-8 text-gray-400 bg-white rounded-xl border border-dashed border-gray-300">
+                                아직 기록된 내용이 없습니다.
+                                <br />
+                                게임을 시작해보세요!
+                            </div>
+                        ) : (
+                            history.map((record) => (
+                                <div
+                                    key={record.id}
+                                    className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center"
+                                >
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded">
+                                                TURN {record.turn}
+                                            </span>
+                                            <span
+                                                className={`text-sm font-bold ${
+                                                    record.profit >= 0 ? "text-blue-600" : "text-red-500"
+                                                }`}
+                                            >
+                                                {record.profit > 0 ? "+" : ""}
+                                                {record.profit} M
+                                            </span>
+                                        </div>
+                                        <div className="text-xs text-gray-400">
+                                            수입 {record.income} / 지출 {record.expense}
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-xs text-gray-400">잔액</div>
+                                        <div className="font-bold text-gray-800 text-lg">
+                                            {record.balance} M
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    <div className="mt-8 text-center pb-8">
+                        <p className="text-xs text-gray-400">
+                            * 실제 카드 결제기에는 턴이 끝난 후
+                            <br />
+                            최종 계산된 금액만 입력하면 됩니다.
+                        </p>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById("settlement-app")).render(<App />);
     </script>
 </body>
 </html>
