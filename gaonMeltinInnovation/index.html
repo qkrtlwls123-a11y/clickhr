@@ -868,13 +868,42 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script type="text/babel" data-presets="env,react">
-        const { useState } = React;
+        const { useState, useEffect, useRef } = React;
+
+        const SETTLEMENT_COOKIE_KEY = "gaon_settlement_state";
+        const SETTLEMENT_COOKIE_MAX_AGE = 60 * 60 * 24 * 14; // 14 days
+
+        const getCookieValue = (name) => {
+            const cookies = `; ${document.cookie}`;
+            const parts = cookies.split(`; ${name}=`);
+            if (parts.length === 2) {
+                return parts.pop().split(";").shift();
+            }
+            return null;
+        };
+
+        const loadSettlementState = () => {
+            const storedValue = getCookieValue(SETTLEMENT_COOKIE_KEY);
+            if (!storedValue) return null;
+
+            try {
+                return JSON.parse(decodeURIComponent(storedValue));
+            } catch (error) {
+                return null;
+            }
+        };
+
+        const saveSettlementState = (state) => {
+            const encoded = encodeURIComponent(JSON.stringify(state));
+            document.cookie = `${SETTLEMENT_COOKIE_KEY}=${encoded}; path=/; max-age=${SETTLEMENT_COOKIE_MAX_AGE}; samesite=lax`;
+        };
 
         const App = () => {
             const [teamName, setTeamName] = useState("");
             const [currentCash, setCurrentCash] = useState(15);
             const [turn, setTurn] = useState(1);
             const [history, setHistory] = useState([]);
+            const hasLoadedRef = useRef(false);
 
             const [inputs, setInputs] = useState({
                 salary: 0,
@@ -896,6 +925,39 @@
                 inputs.donation +
                 inputs.fine;
             const turnProfit = totalIncome - totalExpense;
+
+            useEffect(() => {
+                const storedState = loadSettlementState();
+                if (storedState) {
+                    setTeamName(storedState.teamName ?? "");
+                    setCurrentCash(storedState.currentCash ?? 15);
+                    setTurn(storedState.turn ?? 1);
+                    setHistory(Array.isArray(storedState.history) ? storedState.history : []);
+                    setInputs({
+                        salary: storedState.inputs?.salary ?? 0,
+                        rentIn: storedState.inputs?.rentIn ?? 0,
+                        tradeIn: storedState.inputs?.tradeIn ?? 0,
+                        etcIn: storedState.inputs?.etcIn ?? 0,
+                        invest: storedState.inputs?.invest ?? 0,
+                        rentOut: storedState.inputs?.rentOut ?? 0,
+                        tradeOut: storedState.inputs?.tradeOut ?? 0,
+                        donation: storedState.inputs?.donation ?? 0,
+                        fine: storedState.inputs?.fine ?? 0,
+                    });
+                }
+                hasLoadedRef.current = true;
+            }, []);
+
+            useEffect(() => {
+                if (!hasLoadedRef.current) return;
+                saveSettlementState({
+                    teamName,
+                    currentCash,
+                    turn,
+                    history,
+                    inputs,
+                });
+            }, [teamName, currentCash, turn, history, inputs]);
 
             const handleInputChange = (field, value) => {
                 setInputs((prev) => ({
