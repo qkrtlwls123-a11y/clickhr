@@ -69,6 +69,13 @@
         .nav-btn i { font-size: 1.25rem; margin-bottom: 2px; }
         .nav-btn.active { color: #2563eb; font-weight: bold; }
         .nav-btn.active i { transform: scale(1.1); color: #2563eb; }
+        .nav-main-btn { min-width: 72px; }
+        .nav-sub-btn { font-size: 0.8rem; }
+        .nav-sub-btn.active {
+            color: #1d4ed8;
+            font-weight: 700;
+            border-bottom: 2px solid #2563eb;
+        }
         
         /* 네비게이션 바 가로 스크롤 (필요시) */
         .nav-scroll { overflow-x: auto; -ms-overflow-style: none; scrollbar-width: none; white-space: nowrap; }
@@ -444,18 +451,40 @@
                     </div>
 
                     <div class="w-full mt-8">
-                        <div class="text-left w-full bg-white border border-purple-100 rounded-2xl p-5 shadow-sm">
-                            <div class="flex items-center justify-between mb-3">
-                                <h4 class="text-lg font-bold text-purple-800">손익 계산기</h4>
-                                <span class="text-xs text-gray-400"></span>
+                        <button
+                            onclick="goToSlide(7)"
+                            class="w-full bg-white border border-purple-200 rounded-2xl p-5 shadow-sm text-left hover:border-purple-300 transition"
+                        >
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="text-lg font-bold text-purple-800">손익계산기 바로가기</h4>
+                                <i class="fas fa-arrow-right text-purple-400"></i>
                             </div>
-                            <div id="settlement-app"></div>
-                        </div>
+                            <p class="text-sm text-gray-500">
+                                손익계산기는 별도 페이지에서 입력하세요.
+                            </p>
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <!-- 7. Q&A -->
+            <!-- 7. 손익계산기 -->
+            <div class="flashcard">
+                <div class="bg-blue-700 text-white p-6 pt-8">
+                    <span class="bg-white/20 text-white text-sm font-bold px-2 py-1 rounded">정산 도우미</span>
+                    <h2 class="text-3xl font-bold mt-2"><i class="fas fa-calculator mr-3"></i>손익계산기</h2>
+                </div>
+                <div class="card-content p-6">
+                    <div class="text-left w-full bg-white border border-blue-100 rounded-2xl p-5 shadow-sm">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-lg font-bold text-blue-800">손익 계산기</h4>
+                            <span class="text-xs text-gray-400">직접 입력 가능</span>
+                        </div>
+                        <div id="settlement-app"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8. Q&A -->
             <div class="flashcard">
                 <div class="bg-indigo-600 text-white p-6 pt-8">
                     <span class="bg-white/20 text-white text-sm font-bold px-2 py-1 rounded">Q&A</span>
@@ -596,7 +625,7 @@
                 </div>
             </div>
 
-             <!-- 8. 종료 (End) -->
+             <!-- 9. 종료 (End) -->
              <div class="flashcard">
                 <div class="bg-gray-900 text-white p-6 flex flex-col justify-center h-full text-center">
                     <div class="mb-10">
@@ -630,40 +659,36 @@
 
         <!-- Navigation -->
         <div class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 pb-safe shadow-lg z-50">
-            <div class="w-full overflow-x-auto nav-scroll">
-                <div class="flex justify-between items-center px-4 py-3 min-w-max space-x-4">
-                    <button onclick="goToSlide(0)" class="nav-btn active flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-                        <i class="fas fa-home text-xl mb-1"></i>
-                        <span class="text-xs font-medium">홈</span>
-                    </button>
-                    <button onclick="goToSlide(1)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+            <div class="w-full nav-scroll">
+                <div class="flex justify-between items-center px-4 py-2 min-w-max space-x-4 border-b border-gray-100">
+                    <button onclick="goToSlide(1)" class="nav-btn nav-main-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition" data-main="prep">
                         <i class="fas fa-users text-xl mb-1"></i>
                         <span class="text-xs font-medium">준비</span>
                     </button>
-                    <button onclick="goToSlide(2)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+                    <button onclick="goToSlide(3)" class="nav-btn nav-main-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition" data-main="progress">
+                        <i class="fas fa-route text-xl mb-1"></i>
+                        <span class="text-xs font-medium">게임방법</span>
+                    </button>
+                    <button onclick="goToSlide(7)" class="nav-btn nav-main-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition" data-main="calculator">
                         <i class="fas fa-calculator text-xl mb-1"></i>
-                        <span class="text-xs font-medium">세팅</span>
+                        <span class="text-xs font-medium">손익계산기</span>
                     </button>
-                    <button onclick="goToSlide(3)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-                        <i class="fas fa-dice text-xl mb-1"></i>
-                        <span class="text-xs font-medium">이동</span>
-                    </button>
-                    <button onclick="goToSlide(4)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-                        <i class="fas fa-briefcase text-xl mb-1"></i>
-                        <span class="text-xs font-medium">사업</span>
-                    </button>
-                    <button onclick="goToSlide(5)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-                        <i class="fas fa-star text-xl mb-1"></i>
-                        <span class="text-xs font-medium">특수</span>
-                    </button>
-                    <button onclick="goToSlide(6)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
-                        <i class="fas fa-coins text-xl mb-1"></i>
-                        <span class="text-xs font-medium">정산</span>
-                    </button>
-                     <button onclick="goToSlide(7)" class="nav-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition">
+                    <button onclick="goToSlide(8)" class="nav-btn nav-main-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition" data-main="qa">
                         <i class="fas fa-question-circle text-xl mb-1"></i>
                         <span class="text-xs font-medium">Q&A</span>
                     </button>
+                </div>
+                <div class="px-5 py-4">
+                    <div id="nav-sub-prep" class="flex items-center space-x-3 hidden">
+                        <button onclick="goToSlide(1)" class="nav-sub-btn text-gray-400 hover:text-blue-600 transition" data-sub="1">준비</button>
+                        <button onclick="goToSlide(2)" class="nav-sub-btn text-gray-400 hover:text-blue-600 transition" data-sub="2">세팅</button>
+                    </div>
+                    <div id="nav-sub-progress" class="flex items-center space-x-3 hidden">
+                        <button onclick="goToSlide(3)" class="nav-sub-btn text-gray-400 hover:text-blue-600 transition" data-sub="3">이동</button>
+                        <button onclick="goToSlide(4)" class="nav-sub-btn text-gray-400 hover:text-blue-600 transition" data-sub="4">사업 칸</button>
+                        <button onclick="goToSlide(5)" class="nav-sub-btn text-gray-400 hover:text-blue-600 transition" data-sub="5">특수 칸</button>
+                        <button onclick="goToSlide(6)" class="nav-sub-btn text-gray-400 hover:text-blue-600 transition" data-sub="6">정산</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -683,7 +708,10 @@
     <script>
         let currentSlide = 0;
         const slides = document.querySelectorAll('.flashcard');
-        const navBtns = document.querySelectorAll('.nav-btn');
+        const navMainBtns = document.querySelectorAll('.nav-main-btn');
+        const navSubBtns = document.querySelectorAll('.nav-sub-btn');
+        const navSubPrep = document.getElementById('nav-sub-prep');
+        const navSubProgress = document.getElementById('nav-sub-progress');
         const totalSlides = slides.length;
 
         function updateSlide() {
@@ -697,19 +725,37 @@
             });
 
             // Update Navigation Buttons Highlight
-            navBtns.forEach(btn => btn.classList.remove('active'));
-            
-            // Map slides to nav buttons (Simplified)
-            // 0: 홈, 1: 준비, 2: 세팅, 3: 이동, 4: 사업, 5: 특수, 6: 정산, 7: Q&A, 8: End
-            if (currentSlide === 0) navBtns[0].classList.add('active');
-            else if (currentSlide === 1) navBtns[1].classList.add('active');
-            else if (currentSlide === 2) navBtns[2].classList.add('active');
-            else if (currentSlide === 3) navBtns[3].classList.add('active');
-            else if (currentSlide === 4) navBtns[4].classList.add('active');
-            else if (currentSlide === 5) navBtns[5].classList.add('active');
-            else if (currentSlide === 6) navBtns[6].classList.add('active');
-            else if (currentSlide === 7) navBtns[7].classList.add('active');
-            else if (currentSlide === 8) navBtns[7].classList.add('active'); 
+            navMainBtns.forEach(btn => btn.classList.remove('active'));
+            navSubBtns.forEach(btn => btn.classList.remove('active'));
+
+            navSubPrep.classList.add('hidden');
+            navSubProgress.classList.add('hidden');
+
+            if (currentSlide === 1 || currentSlide === 2) {
+                navMainBtns.forEach(btn => {
+                    if (btn.dataset.main === 'prep') btn.classList.add('active');
+                });
+                navSubPrep.classList.remove('hidden');
+                navSubBtns.forEach(btn => {
+                    if (btn.dataset.sub === String(currentSlide)) btn.classList.add('active');
+                });
+            } else if (currentSlide >= 3 && currentSlide <= 6) {
+                navMainBtns.forEach(btn => {
+                    if (btn.dataset.main === 'progress') btn.classList.add('active');
+                });
+                navSubProgress.classList.remove('hidden');
+                navSubBtns.forEach(btn => {
+                    if (btn.dataset.sub === String(currentSlide)) btn.classList.add('active');
+                });
+            } else if (currentSlide === 7) {
+                navMainBtns.forEach(btn => {
+                    if (btn.dataset.main === 'calculator') btn.classList.add('active');
+                });
+            } else if (currentSlide === 8) {
+                navMainBtns.forEach(btn => {
+                    if (btn.dataset.main === 'qa') btn.classList.add('active');
+                });
+            }
             
             // Auto scroll removed
         }
@@ -863,6 +909,8 @@
             if (touchStartX - touchEndX > 50) nextSlide();
             if (touchEndX - touchStartX > 50) prevSlide();
         }
+
+        updateSlide();
     </script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -968,10 +1016,16 @@
 
             const sanitizeInputValue = (value, activeUnit) => {
                 if (value === "") return value;
+                if (value.includes("-")) return null;
                 if (activeUnit === "K" && value.includes(".")) return null;
 
                 const digits = value.replace(/\D/g, "");
                 if (digits.length > UNIT_CONFIG[activeUnit].maxDigits) {
+                    return null;
+                }
+
+                const numericValue = parseFloat(value);
+                if (!Number.isNaN(numericValue) && numericValue < 0) {
                     return null;
                 }
 
@@ -1013,9 +1067,9 @@
                 if (Number.isNaN(numericValue)) return "";
 
                 if (activeUnit === "M") {
-                    return (Math.round(numericValue * 10) / 10).toString();
+                    return Math.max(0, Math.round(numericValue * 10) / 10).toString();
                 }
-                return (Math.round(numericValue / 100) * 100).toString();
+                return Math.max(0, Math.round(numericValue / 100) * 100).toString();
             };
 
             const setInputValueInM = (field, valueInM) => {
@@ -1032,7 +1086,7 @@
 
                 setInputs((prev) => ({
                     ...prev,
-                    [field]: sanitized === "" ? 0 : toInternalValue(sanitized, unit),
+                    [field]: sanitized === "" ? 0 : Math.max(0, toInternalValue(sanitized, unit)),
                 }));
             };
 
@@ -1040,7 +1094,7 @@
                 if (totalIncome === 0 && totalExpense === 0) {
                     if (
                         !window.confirm(
-                            "수입/지출 내역이 없습니다. 이대로 턴을 넘기시겠습니까? (휴가 등)"
+                            "수입/지출 내역이 없습니다. 이대로 턴을 넘기시겠습니까? "
                         )
                     ) {
                         return;
@@ -1117,6 +1171,7 @@
                         <input
                             type="number"
                             step={UNIT_CONFIG[unit].step}
+                            min="0"
                             inputMode={unit === "K" ? "numeric" : "decimal"}
                             value={getDisplayValue(inputs[field])}
                             onChange={(e) => handleInputChange(field, e.target.value)}
@@ -1146,7 +1201,7 @@
                                     value={teamName}
                                     onChange={(e) => setTeamName(e.target.value)}
                                 />
-                                <p className="text-xs text-gray-400">Financial Management</p>
+                                <p className="text-xs text-gray-400">모노폴리 손익계산기</p>
                             </div>
                             <button
                                 onClick={resetGame}
@@ -1158,7 +1213,7 @@
                         </div>
 
                         <div className="text-center">
-                            <p className="text-sm text-gray-500 mb-1">현재 보유 자산 (Cash)</p>
+                            <p className="text-sm text-gray-500 mb-1">현재 보유 자산 </p>
                             <div className="text-5xl font-black text-blue-600 tracking-tight flex justify-center items-baseline">
                                 {formatAmount(currentCash)}{" "}
                                 <span className="text-2xl ml-1 text-blue-400">{unit}</span>
@@ -1176,7 +1231,7 @@
                                                 : "text-gray-500 hover:text-gray-700"
                                         }`}
                                     >
-                                        {value} 보기
+                                        {value} 단위로 보기
                                     </button>
                                 ))}
                             </div>
@@ -1200,24 +1255,25 @@
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="bg-blue-50 p-3 rounded-xl">
                                     <h3 className="text-blue-700 font-bold mb-3 flex items-center text-sm border-b border-blue-200 pb-1">
-                                        <i className="fa-solid fa-arrow-trend-up mr-1"></i> 수입 (Income)
+                                        <i className="fa-solid fa-arrow-trend-up mr-1"></i> 수입 
                                     </h3>
 
                                     <div className="mb-3">
                                         <div className="flex justify-between items-end mb-1">
                                             <label className="text-xs font-bold text-gray-500">
-                                                월급 (Go)
+                                                월급
                                             </label>
                                             <button
                                                 onClick={() => setInputValueInM("salary", 2)}
                                                 className="text-[10px] bg-blue-200 text-blue-700 px-1.5 py-0.5 rounded hover:bg-blue-300"
                                             >
-                                                +2M 자동
+                                                +2M 
                                             </button>
                                         </div>
                                         <input
                                             type="number"
                                             step={UNIT_CONFIG[unit].step}
+                                            min="0"
                                             inputMode={unit === "K" ? "numeric" : "decimal"}
                                             value={getDisplayValue(inputs.salary)}
                                             onChange={(e) => handleInputChange("salary", e.target.value)}
@@ -1233,33 +1289,34 @@
                                     </div>
 
                                     <InputField label="통행료 수입" field="rentIn" color="blue" />
-                                    <InputField label="매각/협상" field="tradeIn" color="blue" />
-                                    <InputField label="기타(복불복)" field="etcIn" color="blue" />
+                                    <InputField label="사업 매각" field="tradeIn" color="blue" />
+                                    <InputField label="복불복 카드" field="etcIn" color="blue" />
                                 </div>
 
                                 <div className="bg-red-50 p-3 rounded-xl">
                                     <h3 className="text-red-700 font-bold mb-3 flex items-center text-sm border-b border-red-200 pb-1">
-                                        <i className="fa-solid fa-arrow-trend-down mr-1"></i> 지출 (Expense)
+                                        <i className="fa-solid fa-arrow-trend-down mr-1"></i> 지출 
                                     </h3>
 
-                                    <InputField label="투자(땅 구매)" field="invest" color="red" />
+                                    <InputField label="사업 투자 비용" field="invest" color="red" />
                                     <InputField label="통행료 지출" field="rentOut" color="red" />
 
                                     <div className="mb-2">
                                         <div className="flex justify-between items-end mb-1">
                                             <label className="text-xs font-bold text-gray-500">
-                                                기부/위기
+                                                사회공헌
                                             </label>
                                             <button
                                                 onClick={() => setInputValueInM("donation", 1)}
                                                 className="text-[10px] bg-red-200 text-red-700 px-1.5 py-0.5 rounded hover:bg-red-300"
                                             >
-                                                -1M 기부
+                                                -1M 
                                             </button>
                                         </div>
                                         <input
                                             type="number"
                                             step={UNIT_CONFIG[unit].step}
+                                            min="0"
                                             inputMode={unit === "K" ? "numeric" : "decimal"}
                                             value={getDisplayValue(inputs.donation)}
                                             onChange={(e) => handleInputChange("donation", e.target.value)}
@@ -1270,26 +1327,12 @@
                                                 handleInputChange("donation", normalized);
                                             }}
                                             className="w-full p-2 border border-red-200 rounded-lg text-right font-mono text-red-700"
-                                            placeholder="기부"
-                                        />
-                                        <input
-                                            type="number"
-                                            step={UNIT_CONFIG[unit].step}
-                                            inputMode={unit === "K" ? "numeric" : "decimal"}
-                                            value={getDisplayValue(inputs.fine)}
-                                            onChange={(e) => handleInputChange("fine", e.target.value)}
-                                            onBlur={(e) => {
-                                                const normalized = normalizeInputValue(e.target.value, unit);
-                                                if (normalized === "" && e.target.value === "") return;
-                                                if (normalized === "") return;
-                                                handleInputChange("fine", normalized);
-                                            }}
-                                            className="w-full p-2 border border-red-200 rounded-lg text-right font-mono text-red-700 mt-1"
-                                            placeholder="위기/벌금"
+                                            placeholder="0"
                                         />
                                     </div>
 
-                                    <InputField label="인수/협상" field="tradeOut" color="red" />
+                                    <InputField label="손실 발생" field="fine" color="red" />
+                                    <InputField label="복불복 카드" field="tradeOut" color="red" />
                                 </div>
                             </div>
 
