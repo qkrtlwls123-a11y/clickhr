@@ -176,8 +176,8 @@
     <div class="w-full max-w-lg relative">
         
         <!-- PC Navigation Arrows -->
-        <button class="pc-nav-btn left" onclick="prevSlide()"><i class="fas fa-chevron-left text-xl"></i></button>
-        <button class="pc-nav-btn right" onclick="nextSlide()"><i class="fas fa-chevron-right text-xl"></i></button>
+        <button class="pc-nav-btn left" onclick="prevSlide()" aria-label="이전 슬라이드" aria-controls="card-wrapper"><i class="fas fa-chevron-left text-xl"></i></button>
+        <button class="pc-nav-btn right" onclick="nextSlide()" aria-label="다음 슬라이드" aria-controls="card-wrapper"><i class="fas fa-chevron-right text-xl"></i></button>
 
         <!-- Cards Area -->
         <div class="card-container" id="card-wrapper">
@@ -696,9 +696,9 @@
     </div>
 
     <!-- Modal Template -->
-    <div id="modal-overlay" class="modal-overlay" onclick="closeModal()">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <span class="modal-close" onclick="closeModal()">&times;</span>
+    <div id="modal-overlay" class="modal-overlay" onclick="closeModal()" aria-hidden="true">
+        <div class="modal-content" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <button type="button" id="modal-close" class="modal-close" onclick="closeModal()" aria-label="모달 닫기">&times;</button>
             <div id="modal-body">
                 <!-- Content injected via JS -->
             </div>
@@ -803,7 +803,7 @@
         // Modal Logic
         const modalData = {
             'production': `
-                <h3 class="text-2xl font-bold mb-4 flex items-center justify-center text-indigo-800"><i class="fas fa-industry mr-2"></i>생산현장역량</h3>
+                <h3 id="modal-title" class="text-2xl font-bold mb-4 flex items-center justify-center text-indigo-800"><i class="fas fa-industry mr-2"></i>생산현장역량</h3>
                 <img src="https://i.postimg.cc/j2Wrr8pc/image.png" class="mobile-board-img">
                 <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-200 text-left">
                     <h4 class="font-bold text-xl text-indigo-800 mb-2">행동 요령</h4>
@@ -814,7 +814,7 @@
                 </div>
             `,
             'chance': `
-                <h3 class="text-2xl font-bold mb-4 flex items-center justify-center text-yellow-700"><i class="fas fa-dice mr-2"></i>복불복</h3>
+                <h3 id="modal-title" class="text-2xl font-bold mb-4 flex items-center justify-center text-yellow-700"><i class="fas fa-dice mr-2"></i>복불복</h3>
                 <img src="https://i.postimg.cc/0rgh19d9/image.png" class="mobile-board-img">
                 <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200 text-left">
                     <h4 class="font-bold text-xl text-yellow-800 mb-2">행동 요령</h4>
@@ -823,7 +823,7 @@
                 </div>
             `,
             'failure': `
-                <h3 class="text-2xl font-bold mb-4 flex items-center justify-center text-red-700"><i class="fas fa-exclamation-triangle mr-2"></i>투자 실패</h3>
+                <h3 id="modal-title" class="text-2xl font-bold mb-4 flex items-center justify-center text-red-700"><i class="fas fa-exclamation-triangle mr-2"></i>투자 실패</h3>
                 <img src="https://i.postimg.cc/BZdvnDmW/image.png" class="mobile-board-img">
                 <div class="bg-red-50 p-4 rounded-lg border border-red-200 text-left">
                     <h4 class="font-bold text-xl text-red-800 mb-2">위기 발생!</h4>
@@ -834,7 +834,7 @@
                 </div>
             `,
             'go': `
-                <h3 class="text-2xl font-bold mb-4 flex items-center justify-center text-green-700"><i class="fas fa-play mr-2"></i>Go! (출발)</h3>
+                <h3 id="modal-title" class="text-2xl font-bold mb-4 flex items-center justify-center text-green-700"><i class="fas fa-play mr-2"></i>Go! (출발)</h3>
                 <img src="https://i.postimg.cc/d0msWxFD/image.png" class="mobile-board-img">
                 <div class="bg-green-50 p-4 rounded-lg border border-green-200 text-left">
                     <h4 class="font-bold text-xl text-green-800 mb-2">월급 받는 곳</h4>
@@ -846,7 +846,7 @@
                 </div>
             `,
             'vacation': `
-                <h3 class="text-2xl font-bold mb-4 flex items-center justify-center text-blue-700"><i class="fas fa-umbrella-beach mr-2"></i>휴가</h3>
+                <h3 id="modal-title" class="text-2xl font-bold mb-4 flex items-center justify-center text-blue-700"><i class="fas fa-umbrella-beach mr-2"></i>휴가</h3>
                 <img src="https://i.postimg.cc/qqgpvB3n/image.png" class="mobile-board-img">
                 <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 text-left">
                     <h4 class="font-bold text-xl text-blue-800 mb-2">잠시 쉬어가세요</h4>
@@ -857,7 +857,7 @@
                 </div>
             `,
             'overseas': `
-                <h3 class="text-2xl font-bold mb-4 flex items-center justify-center text-purple-700"><i class="fas fa-plane mr-2"></i>해외영업소</h3>
+                <h3 id="modal-title" class="text-2xl font-bold mb-4 flex items-center justify-center text-purple-700"><i class="fas fa-plane mr-2"></i>해외영업소</h3>
                 <img src="https://i.postimg.cc/5NhffVN2/image.png" class="mobile-board-img">
                 <div class="bg-purple-50 p-4 rounded-lg border border-purple-200 text-left">
                     <h4 class="font-bold text-xl text-purple-800 mb-2">글로벌 비즈니스 찬스!</h4>
@@ -869,7 +869,7 @@
                 </div>
             `,
             'social': `
-                <h3 class="text-2xl font-bold mb-4 flex items-center justify-center text-pink-700"><i class="fas fa-hand-holding-heart mr-2"></i>사회공헌</h3>
+                <h3 id="modal-title" class="text-2xl font-bold mb-4 flex items-center justify-center text-pink-700"><i class="fas fa-hand-holding-heart mr-2"></i>사회공헌</h3>
                 <img src="https://i.postimg.cc/tg5bdnd1/image.png" class="mobile-board-img">
                 <div class="bg-pink-50 p-4 rounded-lg border border-pink-200 text-left">
                     <h4 class="font-bold text-xl text-pink-800 mb-2">아름다운 나눔</h4>
@@ -881,15 +881,72 @@
             `
         };
 
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalCloseButton = document.getElementById('modal-close');
+        let lastFocusedElement = null;
+
+        const getFocusableElements = () => {
+            const selectors = [
+                'a[href]',
+                'button:not([disabled])',
+                'textarea:not([disabled])',
+                'input:not([disabled])',
+                'select:not([disabled])',
+                '[tabindex]:not([tabindex="-1"])'
+            ];
+            return Array.from(modalOverlay.querySelectorAll(selectors.join(',')));
+        };
+
+        const handleModalKeydown = (event) => {
+            if (!modalOverlay.classList.contains('open')) return;
+
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                closeModal();
+                return;
+            }
+
+            if (event.key !== 'Tab') return;
+
+            const focusableElements = getFocusableElements();
+            if (focusableElements.length === 0) return;
+
+            const firstElement = focusableElements[0];
+            const lastElement = focusableElements[focusableElements.length - 1];
+
+            if (event.shiftKey) {
+                if (document.activeElement === firstElement) {
+                    event.preventDefault();
+                    lastElement.focus();
+                }
+            } else if (document.activeElement === lastElement) {
+                event.preventDefault();
+                firstElement.focus();
+            }
+        };
+
         function openModal(key) {
             const modalBody = document.getElementById('modal-body');
             modalBody.innerHTML = modalData[key];
-            document.getElementById('modal-overlay').classList.add('open');
+            lastFocusedElement = document.activeElement;
+            modalOverlay.classList.add('open');
+            modalOverlay.setAttribute('aria-hidden', 'false');
+
+            const focusableElements = getFocusableElements();
+            if (focusableElements.length > 0) {
+                focusableElements[0].focus();
+            }
         }
 
         function closeModal() {
-            document.getElementById('modal-overlay').classList.remove('open');
+            modalOverlay.classList.remove('open');
+            modalOverlay.setAttribute('aria-hidden', 'true');
+            if (lastFocusedElement) {
+                lastFocusedElement.focus();
+            }
         }
+
+        document.addEventListener('keydown', handleModalKeydown);
 
         // Touch Swipe Support
         let touchStartX = 0;
