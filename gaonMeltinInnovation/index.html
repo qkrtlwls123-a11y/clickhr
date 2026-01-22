@@ -178,15 +178,6 @@
         .pc-nav-btn.right { right: -25px; }
 
         @media (max-width: 640px) {
-            body {
-                justify-content: flex-start;
-                padding-top: calc(env(safe-area-inset-top) + 8px);
-            }
-
-            .card-container {
-                height: calc(100vh - 60px - var(--nav-height));
-            }
-
             .pc-nav-btn { display: none; }
         }
     </style>
@@ -451,7 +442,7 @@
                     <span class="bg-white/20 text-white text-sm font-bold px-2 py-1 rounded">STEP 3</span>
                     <h2 class="text-3xl font-bold mt-2"><i class="fas fa-coins mr-3"></i>정산하기</h2>
                 </div>
-                <div class="card-content p-6 pt-12 sm:pt-6 flex flex-col items-center justify-center text-center">
+                <div class="card-content p-6 flex flex-col items-center justify-center text-center">
                     <div class="mb-8 animate-bounce">
                         <span class="text-7xl">📢</span>
                     </div>
@@ -680,19 +671,7 @@
         <!-- Navigation -->
         <div class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 pb-safe shadow-lg z-50">
             <div class="w-full nav-scroll">
-                <div class="px-5 py-3 border-b border-gray-100">
-                    <div id="nav-sub-prep" class="flex items-center space-x-3 hidden">
-                        <button onclick="goToSlide(1)" class="nav-sub-btn text-gray-400 hover:text-blue-600 transition" data-sub="1">준비</button>
-                        <button onclick="goToSlide(2)" class="nav-sub-btn text-gray-400 hover:text-blue-600 transition" data-sub="2">세팅</button>
-                    </div>
-                    <div id="nav-sub-progress" class="flex items-center space-x-3 hidden">
-                        <button onclick="goToSlide(3)" class="nav-sub-btn text-gray-400 hover:text-blue-600 transition" data-sub="3">이동</button>
-                        <button onclick="goToSlide(4)" class="nav-sub-btn text-gray-400 hover:text-blue-600 transition" data-sub="4">사업 칸</button>
-                        <button onclick="goToSlide(5)" class="nav-sub-btn text-gray-400 hover:text-blue-600 transition" data-sub="5">특수 칸</button>
-                        <button onclick="goToSlide(6)" class="nav-sub-btn text-gray-400 hover:text-blue-600 transition" data-sub="6">정산</button>
-                    </div>
-                </div>
-                <div class="flex justify-between items-center px-4 py-2 min-w-max space-x-4">
+                <div class="flex justify-between items-center px-4 py-2 min-w-max space-x-4 border-b border-gray-100">
                     <button onclick="goToSlide(1)" class="nav-btn nav-main-btn flex flex-col items-center text-gray-400 hover:text-blue-600 transition" data-main="prep">
                         <i class="fas fa-users text-xl mb-1"></i>
                         <span class="text-xs font-medium">준비</span>
@@ -709,6 +688,18 @@
                         <i class="fas fa-question-circle text-xl mb-1"></i>
                         <span class="text-xs font-medium">Q&A</span>
                     </button>
+                </div>
+                <div class="px-5 py-4">
+                    <div id="nav-sub-prep" class="flex items-center space-x-3 hidden">
+                        <button onclick="goToSlide(1)" class="nav-sub-btn text-gray-400 hover:text-blue-600 transition" data-sub="1">준비</button>
+                        <button onclick="goToSlide(2)" class="nav-sub-btn text-gray-400 hover:text-blue-600 transition" data-sub="2">세팅</button>
+                    </div>
+                    <div id="nav-sub-progress" class="flex items-center space-x-3 hidden">
+                        <button onclick="goToSlide(3)" class="nav-sub-btn text-gray-400 hover:text-blue-600 transition" data-sub="3">이동</button>
+                        <button onclick="goToSlide(4)" class="nav-sub-btn text-gray-400 hover:text-blue-600 transition" data-sub="4">사업 칸</button>
+                        <button onclick="goToSlide(5)" class="nav-sub-btn text-gray-400 hover:text-blue-600 transition" data-sub="5">특수 칸</button>
+                        <button onclick="goToSlide(6)" class="nav-sub-btn text-gray-400 hover:text-blue-600 transition" data-sub="6">정산</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1318,7 +1309,7 @@
             );
 
             return (
-                <div className="min-h-full bg-gray-100 px-5 py-4 sm:p-4 w-full max-w-none sm:max-w-md mx-auto font-sans rounded-2xl border border-gray-100">
+                <div className="min-h-full bg-gray-100 p-3 sm:p-4 w-full max-w-none sm:max-w-md mx-auto font-sans rounded-2xl border border-gray-100">
                     <header className="bg-white rounded-2xl p-6 shadow-sm mb-4 border border-gray-200">
                         <div className="flex justify-between items-start mb-4">
                             <div>
