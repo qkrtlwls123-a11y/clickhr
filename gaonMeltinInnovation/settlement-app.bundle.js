@@ -27,17 +27,6 @@
             donation: 0,
             fine: 0,
         },
-        inputValues: {
-            salary: "",
-            rentIn: "",
-            tradeIn: "",
-            etcIn: "",
-            invest: "",
-            rentOut: "",
-            tradeOut: "",
-            donation: "",
-            fine: "",
-        },
     };
 
     let hasLoaded = false;
@@ -138,22 +127,11 @@
         state.inputs = { ...state.inputs, ...patch };
     };
 
-    const syncInputValues = () => {
-        state.inputValues = Object.keys(state.inputs).reduce((acc, key) => {
-            acc[key] = getDisplayValue(state.inputs[key]);
-            return acc;
-        }, {});
-    };
-
     const handleInputChange = (field, value) => {
         const rawValue = typeof value === "number" ? value.toString() : value;
         const sanitized = sanitizeInputValue(rawValue, state.unit);
         if (sanitized === null) return;
 
-        state.inputValues = {
-            ...state.inputValues,
-            [field]: rawValue,
-        };
         setInputs({
             [field]: sanitized === "" ? 0 : Math.max(0, toInternalValue(sanitized, state.unit)),
         });
@@ -204,7 +182,6 @@
             donation: 0,
             fine: 0,
         });
-        syncInputValues();
     };
 
     const resetGame = () => {
@@ -223,7 +200,6 @@
                 donation: 0,
                 fine: 0,
             });
-            syncInputValues();
         }
     };
 
@@ -275,7 +251,7 @@
                             min="0"
                             inputmode="${state.unit === "K" ? "numeric" : "decimal"}"
                             data-field="${field}"
-                            value="${state.inputValues[field] ?? getDisplayValue(state.inputs[field])}"
+                            value="${getDisplayValue(state.inputs[field])}"
                             placeholder="0"
                             class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 text-right font-mono text-lg bg-white ${colorClasses}"
                         />
@@ -327,7 +303,7 @@
                       .join("");
 
         root.innerHTML = `
-            <div class="min-h-screen bg-gray-100 p-3 sm:p-4 w-full sm:max-w-md sm:mx-auto font-sans rounded-2xl border border-gray-100">
+            <div class="min-h-screen bg-gray-100 p-4 max-w-md mx-auto font-sans rounded-2xl border border-gray-100">
                 <header class="bg-white rounded-2xl p-6 shadow-sm mb-4 border border-gray-200">
                     <div class="flex justify-between items-start mb-4">
                         <div>
@@ -415,7 +391,7 @@
                                         step="${UNIT_CONFIG[state.unit].step}"
                                         min="0"
                                         inputmode="${state.unit === "K" ? "numeric" : "decimal"}"
-                                        value="${state.inputValues.salary ?? getDisplayValue(state.inputs.salary)}"
+                                        value="${getDisplayValue(state.inputs.salary)}"
                                         data-field="salary"
                                         class="w-full p-2 border border-blue-200 rounded-lg text-right font-mono text-blue-700"
                                         placeholder="0"
@@ -452,7 +428,7 @@
                                         step="${UNIT_CONFIG[state.unit].step}"
                                         min="0"
                                         inputmode="${state.unit === "K" ? "numeric" : "decimal"}"
-                                        value="${state.inputValues.donation ?? getDisplayValue(state.inputs.donation)}"
+                                        value="${getDisplayValue(state.inputs.donation)}"
                                         data-field="donation"
                                         class="w-full p-2 border border-red-200 rounded-lg text-right font-mono text-red-700"
                                         placeholder="0"
@@ -618,7 +594,6 @@
             if (!unit || (unit !== "M" && unit !== "K")) return;
             updateAndRender(() => {
                 state.unit = unit;
-                syncInputValues();
             });
             return;
         }
@@ -629,10 +604,6 @@
             if (!field || Number.isNaN(value)) return;
             updateAndRender(() => {
                 setInputs({ [field]: value });
-                state.inputValues = {
-                    ...state.inputValues,
-                    [field]: getDisplayValue(value),
-                };
             });
         }
     });
@@ -655,7 +626,6 @@
             donation: storedState.inputs?.donation ?? 0,
             fine: storedState.inputs?.fine ?? 0,
         };
-        syncInputValues();
     }
 
     hasLoaded = true;
