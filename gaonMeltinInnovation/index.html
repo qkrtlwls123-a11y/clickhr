@@ -81,7 +81,11 @@
         .nav-btn.active { color: #2563eb; font-weight: bold; }
         .nav-btn.active i { transform: scale(1.1); color: #2563eb; }
         .nav-main-btn { min-width: 72px; }
-        .nav-sub-btn { font-size: 0.8rem; }
+        .nav-sub-btn {
+            font-size: 0.95rem;
+            padding: 0.35rem 0.25rem;
+            font-weight: 600;
+        }
         .nav-sub-btn.active {
             color: #1d4ed8;
             font-weight: 700;
@@ -671,7 +675,7 @@
         <!-- Navigation -->
         <div class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 pb-safe shadow-lg z-50">
             <div class="w-full nav-scroll">
-                <div class="px-5 py-2 border-b border-gray-100">
+                <div class="px-5 py-3 border-b border-gray-100">
                     <div id="nav-sub-prep" class="flex items-center space-x-3 hidden">
                         <button onclick="goToSlide(1)" class="nav-sub-btn text-gray-400 hover:text-blue-600 transition" data-sub="1">준비</button>
                         <button onclick="goToSlide(2)" class="nav-sub-btn text-gray-400 hover:text-blue-600 transition" data-sub="2">세팅</button>
@@ -962,20 +966,34 @@
         // Touch Swipe Support
         let touchStartX = 0;
         let touchEndX = 0;
+        let touchStartY = 0;
+        let touchEndY = 0;
+        let allowSwipe = true;
         const cardWrapper = document.getElementById('card-wrapper');
 
+        const isInteractiveTarget = (target) =>
+            target.closest('input, textarea, select, button, label, a, [contenteditable="true"]');
+
         cardWrapper.addEventListener('touchstart', e => {
+            allowSwipe = !isInteractiveTarget(e.target);
             touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
         });
 
         cardWrapper.addEventListener('touchend', e => {
             touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
             handleSwipe();
         });
 
         function handleSwipe() {
-            if (touchStartX - touchEndX > 50) nextSlide();
-            if (touchEndX - touchStartX > 50) prevSlide();
+            if (!allowSwipe) return;
+            const deltaX = touchEndX - touchStartX;
+            const deltaY = touchEndY - touchStartY;
+            const threshold = currentSlide === 7 ? 120 : 60;
+            if (Math.abs(deltaX) < threshold || Math.abs(deltaX) < Math.abs(deltaY)) return;
+            if (deltaX < 0) nextSlide();
+            if (deltaX > 0) prevSlide();
         }
 
         updateSlide();
