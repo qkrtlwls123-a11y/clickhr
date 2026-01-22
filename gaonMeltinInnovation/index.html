@@ -69,6 +69,10 @@
             -webkit-overflow-scrolling: touch;
             padding-bottom: 20px;
         }
+
+        .settlement-content {
+            overflow-y: visible;
+        }
         
         .card-content::-webkit-scrollbar { width: 6px; }
         .card-content::-webkit-scrollbar-thumb { background-color: #e5e7eb; border-radius: 3px; }
@@ -446,7 +450,7 @@
                     <span class="bg-white/20 text-white text-sm font-bold px-2 py-1 rounded">STEP 3</span>
                     <h2 class="text-3xl font-bold mt-2"><i class="fas fa-coins mr-3"></i>정산하기</h2>
                 </div>
-                <div class="card-content p-6 pt-10 flex flex-col items-center justify-center text-center">
+                <div class="card-content settlement-content p-6 pt-10 flex flex-col items-center justify-center text-center">
                     <div class="mb-8 animate-bounce">
                         <span class="text-7xl">📢</span>
                     </div>
@@ -1007,6 +1011,36 @@
         const SETTLEMENT_COOKIE_KEY = "gaon_settlement_state";
         const SETTLEMENT_COOKIE_MAX_AGE = 60 * 60 * 24 * 14; // 14 days
 
+        const COLOR_CLASSES = {
+            blue: "border-blue-200 focus:ring-blue-500 text-blue-700",
+            red: "border-red-200 focus:ring-red-500 text-red-700",
+        };
+
+        const InputField = ({
+            label,
+            field,
+            color = "blue",
+            unit,
+            value,
+            onChange,
+            unitLabel,
+        }) => (
+            <div className="flex flex-col mb-2">
+                <label className="text-xs text-gray-500 font-bold mb-1">{label}</label>
+                <div className="flex items-center">
+                    <input
+                        type="text"
+                        inputMode={unit === "K" ? "numeric" : "decimal"}
+                        value={value}
+                        onChange={(event) => onChange(field, event.target.value)}
+                        placeholder="0"
+                        className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 text-right font-mono text-lg bg-white ${COLOR_CLASSES[color]}`}
+                    />
+                    <span className="ml-2 text-gray-400 text-sm">{unitLabel}</span>
+                </div>
+            </div>
+        );
+
         const getCookieValue = (name) => {
             const cookies = `; ${document.cookie}`;
             const parts = cookies.split(`; ${name}=`);
@@ -1304,28 +1338,6 @@
                 setTurn(lastTurn.turn);
             };
 
-            const colorClasses = {
-                blue: "border-blue-200 focus:ring-blue-500 text-blue-700",
-                red: "border-red-200 focus:ring-red-500 text-red-700",
-            };
-
-            const InputField = ({ label, field, color = "blue" }) => (
-                <div className="flex flex-col mb-2">
-                    <label className="text-xs text-gray-500 font-bold mb-1">{label}</label>
-                    <div className="flex items-center">
-                        <input
-                            type="text"
-                            inputMode={unit === "K" ? "numeric" : "decimal"}
-                            value={inputs[field]}
-                            onChange={(e) => handleInputChange(field, e.target.value)}
-                            placeholder="0"
-                            className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 text-right font-mono text-lg bg-white ${colorClasses[color]}`}
-                        />
-                        <span className="ml-2 text-gray-400 text-sm">{UNIT_CONFIG[unit].label}</span>
-                    </div>
-                </div>
-            );
-
             return (
                 <div className="min-h-full bg-gray-100 p-3 sm:p-4 w-full max-w-none sm:max-w-md mx-auto font-sans rounded-2xl border border-gray-100">
                     <header className="bg-white rounded-2xl p-6 shadow-sm mb-4 border border-gray-200">
@@ -1422,9 +1434,33 @@
                                         </div>
                                     </div>
 
-                                    <InputField label="통행료 수입" field="rentIn" color="blue" />
-                                    <InputField label="사업 매각" field="tradeIn" color="blue" />
-                                    <InputField label="복불복 카드" field="etcIn" color="blue" />
+                                    <InputField
+                                        label="통행료 수입"
+                                        field="rentIn"
+                                        color="blue"
+                                        unit={unit}
+                                        value={inputs.rentIn}
+                                        onChange={handleInputChange}
+                                        unitLabel={UNIT_CONFIG[unit].label}
+                                    />
+                                    <InputField
+                                        label="사업 매각"
+                                        field="tradeIn"
+                                        color="blue"
+                                        unit={unit}
+                                        value={inputs.tradeIn}
+                                        onChange={handleInputChange}
+                                        unitLabel={UNIT_CONFIG[unit].label}
+                                    />
+                                    <InputField
+                                        label="복불복 카드"
+                                        field="etcIn"
+                                        color="blue"
+                                        unit={unit}
+                                        value={inputs.etcIn}
+                                        onChange={handleInputChange}
+                                        unitLabel={UNIT_CONFIG[unit].label}
+                                    />
                                 </div>
 
                                 <div className="bg-red-50 p-3 rounded-xl">
@@ -1432,8 +1468,24 @@
                                         <i className="fa-solid fa-arrow-trend-down mr-1"></i> 지출 
                                     </h3>
 
-                                    <InputField label="사업 투자 비용" field="invest" color="red" />
-                                    <InputField label="통행료 지출" field="rentOut" color="red" />
+                                    <InputField
+                                        label="사업 투자 비용"
+                                        field="invest"
+                                        color="red"
+                                        unit={unit}
+                                        value={inputs.invest}
+                                        onChange={handleInputChange}
+                                        unitLabel={UNIT_CONFIG[unit].label}
+                                    />
+                                    <InputField
+                                        label="통행료 지출"
+                                        field="rentOut"
+                                        color="red"
+                                        unit={unit}
+                                        value={inputs.rentOut}
+                                        onChange={handleInputChange}
+                                        unitLabel={UNIT_CONFIG[unit].label}
+                                    />
 
                                     <div className="mb-2">
                                         <div className="flex justify-between items-end mb-1">
@@ -1462,8 +1514,24 @@
                                         </div>
                                     </div>
 
-                                    <InputField label="손실 발생" field="fine" color="red" />
-                                    <InputField label="복불복 카드" field="tradeOut" color="red" />
+                                    <InputField
+                                        label="손실 발생"
+                                        field="fine"
+                                        color="red"
+                                        unit={unit}
+                                        value={inputs.fine}
+                                        onChange={handleInputChange}
+                                        unitLabel={UNIT_CONFIG[unit].label}
+                                    />
+                                    <InputField
+                                        label="복불복 카드"
+                                        field="tradeOut"
+                                        color="red"
+                                        unit={unit}
+                                        value={inputs.tradeOut}
+                                        onChange={handleInputChange}
+                                        unitLabel={UNIT_CONFIG[unit].label}
+                                    />
                                 </div>
                             </div>
 
