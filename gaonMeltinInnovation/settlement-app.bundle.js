@@ -3,8 +3,8 @@
     if (!root) return;
 
     const UNIT_CONFIG = {
-        M: { step: 0.1, maxDigits: 99, label: "M" },
-        K: { step: 100, maxDigits: 10, label: "K" },
+        M: { maxDigits: 99, label: "M", decimals: 3 },
+        K: { maxDigits: 10, label: "K", decimals: 0 },
     };
 
     const SETTLEMENT_COOKIE_KEY = "gaon_settlement_state";
@@ -68,19 +68,27 @@
     const sanitizeInputValue = (value, activeUnit) => {
         if (value === "") return value;
         if (value.includes("-")) return null;
-        if (activeUnit === "K" && value.includes(".")) return null;
+        const normalizedValue = activeUnit === "M" ? value.replace(",", ".") : value;
+        if (activeUnit === "K" && normalizedValue.includes(".")) return null;
+        if (activeUnit === "M" && !/^\d*(\.\d{0,3})?$/.test(normalizedValue)) return null;
+        if (activeUnit === "K" && !/^\d*$/.test(normalizedValue)) return null;
 
-        const digits = value.replace(/\D/g, "");
+        const digits = normalizedValue.replace(/\D/g, "");
         if (digits.length > UNIT_CONFIG[activeUnit].maxDigits) {
             return null;
         }
 
-        const numericValue = parseFloat(value);
+        const numericValue = parseFloat(normalizedValue);
         if (!Number.isNaN(numericValue) && numericValue < 0) {
             return null;
         }
 
-        return value;
+        return normalizedValue;
+    };
+
+    const roundTo = (value, decimals) => {
+        const factor = 10 ** decimals;
+        return Math.round(value * factor) / factor;
     };
 
     const toInternalValue = (value, activeUnit) => {
@@ -88,39 +96,46 @@
         if (Number.isNaN(numericValue)) return 0;
 
         const inM = activeUnit === "M" ? numericValue : numericValue / 1000;
-        return Math.round(inM * 10) / 10;
+        return roundTo(inM, activeUnit === "M" ? 1 : 3);
     };
 
     const formatAmount = (valueInM) => {
         const multiplier = state.unit === "M" ? 1 : 1000;
         const rawValue = valueInM * multiplier;
         const rounded =
-            state.unit === "M" ? Math.round(rawValue * 10) / 10 : Math.round(rawValue);
+            state.unit === "M" ? roundTo(rawValue, 3) : Math.round(rawValue);
         const hasDecimal = rounded % 1 !== 0;
         return rounded.toLocaleString(undefined, {
             minimumFractionDigits: hasDecimal ? 1 : 0,
-            maximumFractionDigits: state.unit === "M" ? 1 : 0,
+            maximumFractionDigits: state.unit === "M" ? 3 : 0,
         });
+    };
+
+    const formatInputNumber = (value, decimals) => {
+        if (Number.isNaN(value)) return "";
+        const fixed = value.toFixed(decimals);
+        return fixed.replace(/\.?0+$/, "");
     };
 
     const getDisplayValue = (valueInM) => {
         if (valueInM === 0) return "";
         const displayValue = state.unit === "M" ? valueInM : valueInM * 1000;
         if (state.unit === "M") {
-            return displayValue % 1 === 0 ? displayValue.toString() : displayValue.toFixed(1);
+            return formatInputNumber(displayValue, UNIT_CONFIG.M.decimals);
         }
         return Math.round(displayValue).toString();
     };
 
     const normalizeInputValue = (value, activeUnit) => {
         if (value === "") return value;
-        const numericValue = parseFloat(value);
+        const normalizedValue = activeUnit === "M" ? value.replace(",", ".") : value;
+        const numericValue = parseFloat(normalizedValue);
         if (Number.isNaN(numericValue)) return "";
 
         if (activeUnit === "M") {
-            return Math.max(0, Math.round(numericValue * 10) / 10).toString();
+            return Math.max(0, roundTo(numericValue, 1)).toString();
         }
-        return Math.max(0, Math.round(numericValue / 100) * 100).toString();
+        return Math.max(0, Math.round(numericValue)).toString();
     };
 
     const setInputs = (patch) => {
@@ -246,10 +261,9 @@
                     <label class="text-xs text-gray-500 font-bold mb-1">${label}</label>
                     <div class="flex items-center">
                         <input
-                            type="number"
-                            step="${UNIT_CONFIG[state.unit].step}"
-                            min="0"
+                            type="text"
                             inputmode="${state.unit === "K" ? "numeric" : "decimal"}"
+                            pattern="${state.unit === "K" ? "[0-9]*" : "[0-9]*[.,]?[0-9]*"}"
                             data-field="${field}"
                             value="${getDisplayValue(state.inputs[field])}"
                             placeholder="0"
@@ -303,7 +317,7 @@
                       .join("");
 
         root.innerHTML = `
-            <div class="min-h-screen bg-gray-100 p-4 max-w-md mx-auto font-sans rounded-2xl border border-gray-100">
+            <div class="min-h-screen bg-gray-100 p-4 w-full max-w-none mx-auto font-sans rounded-2xl border border-gray-100">
                 <header class="bg-white rounded-2xl p-6 shadow-sm mb-4 border border-gray-200">
                     <div class="flex justify-between items-start mb-4">
                         <div>
@@ -387,10 +401,9 @@
                                         </button>
                                     </div>
                                     <input
-                                        type="number"
-                                        step="${UNIT_CONFIG[state.unit].step}"
-                                        min="0"
+                                        type="text"
                                         inputmode="${state.unit === "K" ? "numeric" : "decimal"}"
+                                        pattern="${state.unit === "K" ? "[0-9]*" : "[0-9]*[.,]?[0-9]*"}"
                                         value="${getDisplayValue(state.inputs.salary)}"
                                         data-field="salary"
                                         class="w-full p-2 border border-blue-200 rounded-lg text-right font-mono text-blue-700"
@@ -424,10 +437,9 @@
                                         </button>
                                     </div>
                                     <input
-                                        type="number"
-                                        step="${UNIT_CONFIG[state.unit].step}"
-                                        min="0"
+                                        type="text"
                                         inputmode="${state.unit === "K" ? "numeric" : "decimal"}"
+                                        pattern="${state.unit === "K" ? "[0-9]*" : "[0-9]*[.,]?[0-9]*"}"
                                         value="${getDisplayValue(state.inputs.donation)}"
                                         data-field="donation"
                                         class="w-full p-2 border border-red-200 rounded-lg text-right font-mono text-red-700"
