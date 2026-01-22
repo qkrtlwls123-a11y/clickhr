@@ -8,14 +8,25 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; word-break: keep-all; background-color: #f3f4f6; }
+        :root {
+            --nav-height: 120px;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            word-break: keep-all;
+            background-color: #f3f4f6;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom));
+        }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         
         /* 카드 컨테이너 */
         .card-container {
             perspective: 1000px;
             overflow: hidden;
             position: relative;
-            height: calc(100vh - 90px); 
+            height: calc(100vh - 90px - var(--nav-height)); 
             max-height: 800px;
             background-color: white;
             border-radius: 1.5rem;
@@ -1014,46 +1025,136 @@
             const [history, setHistory] = useState([]);
             const [unit, setUnit] = useState("M");
             const hasLoadedRef = useRef(false);
+            const prevUnitRef = useRef("M");
 
-            const [inputs, setInputs] = useState({
-                salary: 0,
-                rentIn: 0,
-                tradeIn: 0,
-                etcIn: 0,
-                invest: 0,
-                rentOut: 0,
-                tradeOut: 0,
-                donation: 0,
-                fine: 0,
-            });
+            const INPUT_FIELDS = [
+                "salary",
+                "rentIn",
+                "tradeIn",
+                "etcIn",
+                "invest",
+                "rentOut",
+                "tradeOut",
+                "donation",
+                "fine",
+            ];
 
-            const totalIncome = inputs.salary + inputs.rentIn + inputs.tradeIn + inputs.etcIn;
+            const initialInputs = {
+                salary: "",
+                rentIn: "",
+                tradeIn: "",
+                etcIn: "",
+                invest: "",
+                rentOut: "",
+                tradeOut: "",
+                donation: "",
+                fine: "",
+            };
+
+            const [inputs, setInputs] = useState(initialInputs);
+
+            const formatInputForUnit = (valueInM, activeUnit) => {
+                if (!valueInM) return "";
+                const displayValue = activeUnit === "M" ? valueInM : valueInM * 1000;
+                if (activeUnit === "M") {
+                    return displayValue % 1 === 0
+                        ? displayValue.toString()
+                        : displayValue.toFixed(1);
+                }
+                return Math.round(displayValue).toString();
+            };
+
+            const parseInputValue = (value, activeUnit) => {
+                if (value === "") return { valueInM: 0, isValid: true };
+                const normalized = value.replace(/,/g, "");
+                if (!/^\d*\.?\d*$/.test(normalized)) {
+                    return { valueInM: 0, isValid: false };
+                }
+                const numericValue = parseFloat(normalized);
+                if (Number.isNaN(numericValue) || numericValue < 0) {
+                    return { valueInM: 0, isValid: false };
+                }
+
+                if (activeUnit === "M") {
+                    const rounded = Math.round(numericValue * 10) / 10;
+                    const isValid = Math.abs(rounded - numericValue) < 1e-9;
+                    return { valueInM: rounded, isValid };
+                }
+
+                if (!Number.isInteger(numericValue) || numericValue % 100 !== 0) {
+                    return { valueInM: numericValue / 1000, isValid: false };
+                }
+                return { valueInM: numericValue / 1000, isValid: true };
+            };
+
+            const parsedInputs = Object.fromEntries(
+                INPUT_FIELDS.map((field) => [field, parseInputValue(inputs[field], unit)])
+            );
+
+            const getSafeValue = (field) =>
+                parsedInputs[field].isValid ? parsedInputs[field].valueInM : 0;
+
+            const totalIncome =
+                getSafeValue("salary") +
+                getSafeValue("rentIn") +
+                getSafeValue("tradeIn") +
+                getSafeValue("etcIn");
             const totalExpense =
-                inputs.invest +
-                inputs.rentOut +
-                inputs.tradeOut +
-                inputs.donation +
-                inputs.fine;
+                getSafeValue("invest") +
+                getSafeValue("rentOut") +
+                getSafeValue("tradeOut") +
+                getSafeValue("donation") +
+                getSafeValue("fine");
             const turnProfit = totalIncome - totalExpense;
 
             useEffect(() => {
                 const storedState = loadSettlementState();
                 if (storedState) {
+                    const storedUnit = storedState.unit ?? "M";
+                    const storedInputs = storedState.inputs ?? {};
+
                     setTeamName(storedState.teamName ?? "");
                     setCurrentCash(storedState.currentCash ?? 15);
                     setTurn(storedState.turn ?? 1);
                     setHistory(Array.isArray(storedState.history) ? storedState.history : []);
-                    setUnit(storedState.unit ?? "M");
+                    setUnit(storedUnit);
                     setInputs({
-                        salary: storedState.inputs?.salary ?? 0,
-                        rentIn: storedState.inputs?.rentIn ?? 0,
-                        tradeIn: storedState.inputs?.tradeIn ?? 0,
-                        etcIn: storedState.inputs?.etcIn ?? 0,
-                        invest: storedState.inputs?.invest ?? 0,
-                        rentOut: storedState.inputs?.rentOut ?? 0,
-                        tradeOut: storedState.inputs?.tradeOut ?? 0,
-                        donation: storedState.inputs?.donation ?? 0,
-                        fine: storedState.inputs?.fine ?? 0,
+                        salary:
+                            typeof storedInputs.salary === "number"
+                                ? formatInputForUnit(storedInputs.salary, storedUnit)
+                                : storedInputs.salary ?? "",
+                        rentIn:
+                            typeof storedInputs.rentIn === "number"
+                                ? formatInputForUnit(storedInputs.rentIn, storedUnit)
+                                : storedInputs.rentIn ?? "",
+                        tradeIn:
+                            typeof storedInputs.tradeIn === "number"
+                                ? formatInputForUnit(storedInputs.tradeIn, storedUnit)
+                                : storedInputs.tradeIn ?? "",
+                        etcIn:
+                            typeof storedInputs.etcIn === "number"
+                                ? formatInputForUnit(storedInputs.etcIn, storedUnit)
+                                : storedInputs.etcIn ?? "",
+                        invest:
+                            typeof storedInputs.invest === "number"
+                                ? formatInputForUnit(storedInputs.invest, storedUnit)
+                                : storedInputs.invest ?? "",
+                        rentOut:
+                            typeof storedInputs.rentOut === "number"
+                                ? formatInputForUnit(storedInputs.rentOut, storedUnit)
+                                : storedInputs.rentOut ?? "",
+                        tradeOut:
+                            typeof storedInputs.tradeOut === "number"
+                                ? formatInputForUnit(storedInputs.tradeOut, storedUnit)
+                                : storedInputs.tradeOut ?? "",
+                        donation:
+                            typeof storedInputs.donation === "number"
+                                ? formatInputForUnit(storedInputs.donation, storedUnit)
+                                : storedInputs.donation ?? "",
+                        fine:
+                            typeof storedInputs.fine === "number"
+                                ? formatInputForUnit(storedInputs.fine, storedUnit)
+                                : storedInputs.fine ?? "",
                     });
                 }
                 hasLoadedRef.current = true;
@@ -1071,31 +1172,27 @@
                 });
             }, [teamName, currentCash, turn, history, inputs, unit]);
 
-            const sanitizeInputValue = (value, activeUnit) => {
-                if (value === "") return value;
-                if (value.includes("-")) return null;
-                if (activeUnit === "K" && value.includes(".")) return null;
+            useEffect(() => {
+                const prevUnit = prevUnitRef.current;
+                if (prevUnit === unit) return;
 
-                const digits = value.replace(/\D/g, "");
-                if (digits.length > UNIT_CONFIG[activeUnit].maxDigits) {
-                    return null;
-                }
+                setInputs((prev) => {
+                    const updated = { ...prev };
+                    INPUT_FIELDS.forEach((field) => {
+                        if (prev[field] === "") {
+                            updated[field] = "";
+                            return;
+                        }
+                        const parsed = parseInputValue(prev[field], prevUnit);
+                        if (parsed.isValid) {
+                            updated[field] = formatInputForUnit(parsed.valueInM, unit);
+                        }
+                    });
+                    return updated;
+                });
 
-                const numericValue = parseFloat(value);
-                if (!Number.isNaN(numericValue) && numericValue < 0) {
-                    return null;
-                }
-
-                return value;
-            };
-
-            const toInternalValue = (value, activeUnit) => {
-                const numericValue = parseFloat(value);
-                if (Number.isNaN(numericValue)) return 0;
-
-                const inM = activeUnit === "M" ? numericValue : numericValue / 1000;
-                return Math.round(inM * 10) / 10;
-            };
+                prevUnitRef.current = unit;
+            }, [unit]);
 
             const formatAmount = (valueInM) => {
                 const multiplier = unit === "M" ? 1 : 1000;
@@ -1109,45 +1206,31 @@
                 });
             };
 
-            const getDisplayValue = (valueInM) => {
-                if (valueInM === 0) return "";
-                const displayValue = unit === "M" ? valueInM : valueInM * 1000;
-                if (unit === "M") {
-                    return displayValue % 1 === 0 ? displayValue.toString() : displayValue.toFixed(1);
-                }
-                return Math.round(displayValue).toString();
-            };
-
-            const normalizeInputValue = (value, activeUnit) => {
-                if (value === "") return value;
-                const numericValue = parseFloat(value);
-                if (Number.isNaN(numericValue)) return "";
-
-                if (activeUnit === "M") {
-                    return Math.max(0, Math.round(numericValue * 10) / 10).toString();
-                }
-                return Math.max(0, Math.round(numericValue / 100) * 100).toString();
-            };
-
             const setInputValueInM = (field, valueInM) => {
                 setInputs((prev) => ({
                     ...prev,
-                    [field]: valueInM,
+                    [field]: formatInputForUnit(valueInM, unit),
                 }));
             };
 
             const handleInputChange = (field, value) => {
-                const rawValue = typeof value === "number" ? value.toString() : value;
-                const sanitized = sanitizeInputValue(rawValue, unit);
-                if (sanitized === null) return;
-
                 setInputs((prev) => ({
                     ...prev,
-                    [field]: sanitized === "" ? 0 : Math.max(0, toInternalValue(sanitized, unit)),
+                    [field]: value,
                 }));
             };
 
             const finishTurn = () => {
+                const invalidFields = INPUT_FIELDS.filter(
+                    (field) => !parsedInputs[field].isValid
+                );
+                if (invalidFields.length > 0) {
+                    window.alert(
+                        "입력값을 확인해주세요.\nM 단위는 0.1 단위, K 단위는 100 단위로 입력 가능합니다."
+                    );
+                    return;
+                }
+
                 if (totalIncome === 0 && totalExpense === 0) {
                     if (
                         !window.confirm(
@@ -1159,6 +1242,9 @@
                 }
 
                 const newBalance = currentCash + turnProfit;
+                const inputsInM = Object.fromEntries(
+                    INPUT_FIELDS.map((field) => [field, parsedInputs[field].valueInM])
+                );
                 const turnData = {
                     id: Date.now(),
                     turn: turn,
@@ -1166,23 +1252,13 @@
                     expense: totalExpense,
                     profit: turnProfit,
                     balance: newBalance,
-                    details: { ...inputs },
+                    details: inputsInM,
                 };
 
                 setHistory([turnData, ...history]);
                 setCurrentCash(newBalance);
                 setTurn(turn + 1);
-                setInputs({
-                    salary: 0,
-                    rentIn: 0,
-                    tradeIn: 0,
-                    etcIn: 0,
-                    invest: 0,
-                    rentOut: 0,
-                    tradeOut: 0,
-                    donation: 0,
-                    fine: 0,
-                });
+                setInputs(initialInputs);
             };
 
             const resetGame = () => {
@@ -1190,18 +1266,12 @@
                     setTurn(1);
                     setCurrentCash(15);
                     setHistory([]);
-                    setInputs({
-                        salary: 0,
-                        rentIn: 0,
-                        tradeIn: 0,
-                        etcIn: 0,
-                        invest: 0,
-                        rentOut: 0,
-                        tradeOut: 0,
-                        donation: 0,
-                        fine: 0,
-                    });
+                    setInputs(initialInputs);
                 }
+            };
+
+            const clearInputs = () => {
+                setInputs(initialInputs);
             };
 
             const undoLastTurn = () => {
@@ -1226,18 +1296,10 @@
                     <label className="text-xs text-gray-500 font-bold mb-1">{label}</label>
                     <div className="flex items-center">
                         <input
-                            type="number"
-                            step={UNIT_CONFIG[unit].step}
-                            min="0"
+                            type="text"
                             inputMode={unit === "K" ? "numeric" : "decimal"}
-                            value={getDisplayValue(inputs[field])}
+                            value={inputs[field]}
                             onChange={(e) => handleInputChange(field, e.target.value)}
-                            onBlur={(e) => {
-                                const normalized = normalizeInputValue(e.target.value, unit);
-                                if (normalized === "" && e.target.value === "") return;
-                                if (normalized === "") return;
-                                handleInputChange(field, normalized);
-                            }}
                             placeholder="0"
                             className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 text-right font-mono text-lg bg-white ${colorClasses[color]}`}
                         />
@@ -1247,7 +1309,7 @@
             );
 
             return (
-                <div className="min-h-screen bg-gray-100 p-4 max-w-md mx-auto font-sans rounded-2xl border border-gray-100">
+                <div className="min-h-full bg-gray-100 p-3 sm:p-4 w-full max-w-none sm:max-w-md mx-auto font-sans rounded-2xl border border-gray-100">
                     <header className="bg-white rounded-2xl p-6 shadow-sm mb-4 border border-gray-200">
                         <div className="flex justify-between items-start mb-4">
                             <div>
@@ -1327,22 +1389,19 @@
                                                 +2M 
                                             </button>
                                         </div>
-                                        <input
-                                            type="number"
-                                            step={UNIT_CONFIG[unit].step}
-                                            min="0"
-                                            inputMode={unit === "K" ? "numeric" : "decimal"}
-                                            value={getDisplayValue(inputs.salary)}
-                                            onChange={(e) => handleInputChange("salary", e.target.value)}
-                                            onBlur={(e) => {
-                                                const normalized = normalizeInputValue(e.target.value, unit);
-                                                if (normalized === "" && e.target.value === "") return;
-                                                if (normalized === "") return;
-                                                handleInputChange("salary", normalized);
-                                            }}
-                                            className="w-full p-2 border border-blue-200 rounded-lg text-right font-mono text-blue-700"
-                                            placeholder="0"
-                                        />
+                                        <div className="flex items-center">
+                                            <input
+                                                type="text"
+                                                inputMode={unit === "K" ? "numeric" : "decimal"}
+                                                value={inputs.salary}
+                                                onChange={(e) => handleInputChange("salary", e.target.value)}
+                                                className="w-full p-2 border border-blue-200 rounded-lg text-right font-mono text-blue-700"
+                                                placeholder="0"
+                                            />
+                                            <span className="ml-2 text-gray-400 text-sm">
+                                                {UNIT_CONFIG[unit].label}
+                                            </span>
+                                        </div>
                                     </div>
 
                                     <InputField label="통행료 수입" field="rentIn" color="blue" />
@@ -1370,22 +1429,19 @@
                                                 -1M 
                                             </button>
                                         </div>
-                                        <input
-                                            type="number"
-                                            step={UNIT_CONFIG[unit].step}
-                                            min="0"
-                                            inputMode={unit === "K" ? "numeric" : "decimal"}
-                                            value={getDisplayValue(inputs.donation)}
-                                            onChange={(e) => handleInputChange("donation", e.target.value)}
-                                            onBlur={(e) => {
-                                                const normalized = normalizeInputValue(e.target.value, unit);
-                                                if (normalized === "" && e.target.value === "") return;
-                                                if (normalized === "") return;
-                                                handleInputChange("donation", normalized);
-                                            }}
-                                            className="w-full p-2 border border-red-200 rounded-lg text-right font-mono text-red-700"
-                                            placeholder="0"
-                                        />
+                                        <div className="flex items-center">
+                                            <input
+                                                type="text"
+                                                inputMode={unit === "K" ? "numeric" : "decimal"}
+                                                value={inputs.donation}
+                                                onChange={(e) => handleInputChange("donation", e.target.value)}
+                                                className="w-full p-2 border border-red-200 rounded-lg text-right font-mono text-red-700"
+                                                placeholder="0"
+                                            />
+                                            <span className="ml-2 text-gray-400 text-sm">
+                                                {UNIT_CONFIG[unit].label}
+                                            </span>
+                                        </div>
                                     </div>
 
                                     <InputField label="손실 발생" field="fine" color="red" />
@@ -1411,12 +1467,20 @@
                                 </div>
                             </div>
 
-                            <button
-                                onClick={finishTurn}
-                                className="w-full mt-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-md transition flex items-center justify-center"
-                            >
-                                <i className="fa-solid fa-floppy-disk mr-2"></i> 턴 종료 및 저장
-                            </button>
+                            <div className="mt-3 grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={clearInputs}
+                                    className="w-full bg-white border border-gray-200 text-gray-500 font-bold py-3 rounded-xl shadow-sm transition hover:text-gray-700 hover:border-gray-300 flex items-center justify-center"
+                                >
+                                    <i className="fa-solid fa-eraser mr-2"></i> 입력 지우기
+                                </button>
+                                <button
+                                    onClick={finishTurn}
+                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-md transition flex items-center justify-center"
+                                >
+                                    <i className="fa-solid fa-floppy-disk mr-2"></i> 턴 종료 및 저장
+                                </button>
+                            </div>
                         </div>
                     </div>
 
